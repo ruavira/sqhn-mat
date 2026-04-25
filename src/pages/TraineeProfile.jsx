@@ -6,7 +6,7 @@ import PullToRefresh from '@/components/shared/PullToRefresh';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import AppHeader from '@/components/shared/AppHeader';
-import BottomNav from '@/components/shared/BottomNav.jsx';
+import BottomNav from '@/components/shared/BottomNav';
 import StatusChip from '@/components/shared/StatusChip';
 import MentorStandardsTab from '@/components/mentor/MentorStandardsTab.jsx';
 import MentorConferencesTab from '@/components/mentor/MentorConferencesTab.jsx';

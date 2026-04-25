@@ -6,7 +6,7 @@ import { saveStandardsScore } from '@/functions/saveStandardsScore';
 import { getSession } from '@/lib/sqhnSession';
 import { cacheSet, cacheGet, queueWrite } from '@/lib/offlineDb';
 import AppHeader from '@/components/shared/AppHeader';
-import BottomNav from '@/components/shared/BottomNav.jsx';
+import BottomNav from '@/components/shared/BottomNav';
 import ScoreChip from '@/components/shared/ScoreChip';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';

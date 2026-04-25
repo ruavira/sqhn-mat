@@ -4,7 +4,7 @@ import { getTraineeProfile } from '@/functions/getTraineeProfile';
 import { saveConferenceRecord } from '@/functions/saveConferenceRecord';
 import { getSession } from '@/lib/sqhnSession';
 import AppHeader from '@/components/shared/AppHeader';
-import BottomNav from '@/components/shared/BottomNav.jsx';
+import BottomNav from '@/components/shared/BottomNav';
 import StatusChip from '@/components/shared/StatusChip';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getMentorAssignments } from '@/functions/getMentorAssignments';
 import { getSession } from '@/lib/sqhnSession';
 import AppHeader from '@/components/shared/AppHeader';
-import BottomNav from '@/components/shared/BottomNav.jsx';
+import BottomNav from '@/components/shared/BottomNav';
 import TraineeCard from '@/components/mentor/TraineeCard';
 import { Card } from '@/components/ui/card';
 import { Users, Clock, CheckCircle2, Loader2 } from 'lucide-react';
