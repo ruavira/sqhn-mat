@@ -32,11 +32,12 @@ const RATINGS = [
   { value: 'needs_improvement', label: 'Needs Improvement', activeClass: 'bg-amber-100 text-amber-700 border-amber-300 ring-2 ring-amber-200' },
 ];
 
-function ConferenceCard({ record, type, agenda, onRatingChange, saving }) {
+function ConferenceCard({ record, type, agenda, onRatingChange, onCommentChange, saving }) {
   const icon = type === 'entrance' ? LogIn : LogOut;
   const Icon = icon;
   const title = type === 'entrance' ? 'Entrance Conference' : 'Exit Conference';
   const ratings = record?.item_ratings || {};
+  const comments = record?.item_comments || {};
 
   const rated = agenda.filter((_, i) => ratings[i]).length;
 
@@ -84,6 +85,15 @@ function ConferenceCard({ record, type, agenda, onRatingChange, saving }) {
                   </button>
                 ))}
               </div>
+              <div className="pl-7">
+                <textarea
+                  value={comments[idx] || ''}
+                  onChange={e => onCommentChange(type, idx, e.target.value)}
+                  placeholder="Comment (optional)..."
+                  rows={1}
+                  className="w-full text-xs rounded-lg border border-input bg-transparent px-3 py-2 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                />
+              </div>
             </div>
           );
         })}
@@ -117,60 +127,69 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
     });
   }, [assignmentId]);
 
-  const handleRatingChange = useCallback(async (type, itemIndex, rating) => {
-    // Update local state
+  const saveRecord = useCallback((type, updatedConferences) => {
+    const record = updatedConferences.find(r => r.conference_type === type);
+    const payload = {
+      trainee_email: traineeEmail,
+      assignment_id: assignmentId,
+      conference_type: type,
+      item_ratings: record?.item_ratings || {},
+      item_comments: record?.item_comments || {},
+      notes: record?.notes || '',
+      status: record?.status || 'in_progress',
+      record_id: record?.id || null,
+    };
+    setSaving(prev => ({ ...prev, [type]: true }));
+    saveConferenceRecord(payload).then(res => {
+      const saved = res.data?.record;
+      if (saved?.id) {
+        setConferences(prev => {
+          const updated = [...prev];
+          const idx = updated.findIndex(r => r.conference_type === type);
+          if (idx === -1) updated.push(saved);
+          else updated[idx] = { ...updated[idx], id: saved.id };
+          return updated;
+        });
+      }
+      setSaving(prev => ({ ...prev, [type]: false }));
+    });
+  }, [traineeEmail, assignmentId]);
+
+  const handleRatingChange = useCallback((type, itemIndex, rating) => {
     setConferences(prev => {
       const updated = [...prev];
       const idx = updated.findIndex(r => r.conference_type === type);
       if (idx === -1) {
-        // No record yet — create a local placeholder, save will create it
-        updated.push({ conference_type: type, item_ratings: { [itemIndex]: rating }, status: 'in_progress' });
-      } else {
-        const rec = { ...updated[idx] };
-        const currentRating = rec.item_ratings?.[itemIndex];
-        rec.item_ratings = {
-          ...(rec.item_ratings || {}),
-          // Toggle off if same rating clicked
-          [itemIndex]: currentRating === rating ? undefined : rating,
-        };
-        // Clean up undefined values
-        Object.keys(rec.item_ratings).forEach(k => {
-          if (rec.item_ratings[k] === undefined) delete rec.item_ratings[k];
-        });
-        updated[idx] = rec;
+        const next = [...updated, { conference_type: type, item_ratings: { [itemIndex]: rating }, item_comments: {}, status: 'in_progress' }];
+        saveRecord(type, next);
+        return next;
       }
+      const rec = { ...updated[idx] };
+      const currentRating = rec.item_ratings?.[itemIndex];
+      rec.item_ratings = { ...(rec.item_ratings || {}) };
+      if (currentRating === rating) delete rec.item_ratings[itemIndex];
+      else rec.item_ratings[itemIndex] = rating;
+      updated[idx] = rec;
+      saveRecord(type, updated);
       return updated;
     });
+  }, [saveRecord]);
 
-    // Save to backend
-    setSaving(prev => ({ ...prev, [type]: true }));
-    setConferences(current => {
-      const record = current.find(r => r.conference_type === type);
-      const payload = {
-        trainee_email: traineeEmail,
-        assignment_id: assignmentId,
-        conference_type: type,
-        item_ratings: record?.item_ratings || {},
-        notes: record?.notes || '',
-        status: record?.status || 'in_progress',
-        record_id: record?.id || null,
-      };
-      saveConferenceRecord(payload).then(res => {
-        const saved = res.data?.record;
-        if (saved) {
-          setConferences(prev => {
-            const updated = [...prev];
-            const idx = updated.findIndex(r => r.conference_type === type);
-            if (idx === -1) updated.push(saved);
-            else updated[idx] = { ...updated[idx], id: saved.id };
-            return updated;
-          });
-        }
-        setSaving(prev => ({ ...prev, [type]: false }));
-      });
-      return current;
+  const handleCommentChange = useCallback((type, itemIndex, comment) => {
+    setConferences(prev => {
+      const updated = [...prev];
+      const idx = updated.findIndex(r => r.conference_type === type);
+      if (idx === -1) {
+        const next = [...updated, { conference_type: type, item_ratings: {}, item_comments: { [itemIndex]: comment }, status: 'in_progress' }];
+        saveRecord(type, next);
+        return next;
+      }
+      const rec = { ...updated[idx], item_comments: { ...(updated[idx].item_comments || {}), [itemIndex]: comment } };
+      updated[idx] = rec;
+      saveRecord(type, updated);
+      return updated;
     });
-  }, [traineeEmail, assignmentId]);
+  }, [saveRecord]);
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
@@ -186,6 +205,7 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
         type="entrance"
         agenda={ENTRANCE_AGENDA}
         onRatingChange={handleRatingChange}
+        onCommentChange={handleCommentChange}
         saving={saving.entrance}
       />
       <ConferenceCard
@@ -193,6 +213,7 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
         type="exit"
         agenda={EXIT_AGENDA}
         onRatingChange={handleRatingChange}
+        onCommentChange={handleCommentChange}
         saving={saving.exit}
       />
     </div>

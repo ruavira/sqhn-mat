@@ -47,6 +47,13 @@
         ]
       }
     },
+    "item_comments": {
+      "type": "object",
+      "description": "Map of agenda item index (as string key) to free-text mentor comment",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
     "notes": {
       "type": "string",
       "description": "Conference notes"
