@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { getAbridgedStandards } from '@/functions/getAbridgedStandards';
+import { getTraineeScores } from '@/functions/getTraineeScores';
 import ScoreChip from '@/components/shared/ScoreChip';
 import { Loader2, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
-export default function MentorStandardsTab({ traineeEmail, assignmentId }) {
-  const [scores, setScores] = useState([]);
+export default function MentorStandardsTab({ traineeEmail, assignmentId, initialScores }) {
+  const [scores, setScores] = useState(initialScores || []);
   const [standards, setStandards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedChapters, setExpandedChapters] = useState({});
 
   const fetchData = async () => {
-    const [stdList, scoreList] = await Promise.all([
-      base44.entities.AbridgedStandard.list('order_index', 100),
-      base44.entities.StandardsScore.filter({ trainee_email: traineeEmail, assignment_id: assignmentId }),
+    const [stdRes, scoreRes] = await Promise.all([
+      getAbridgedStandards({}),
+      getTraineeScores({ trainee_email: traineeEmail, assignment_id: assignmentId }),
     ]);
-    setStandards(stdList);
-    setScores(scoreList);
+    setStandards(stdRes.data?.standards || []);
+    setScores(scoreRes.data?.scores || []);
     setLoading(false);
   };
 
@@ -37,7 +38,6 @@ export default function MentorStandardsTab({ traineeEmail, assignmentId }) {
   const scored = standards.filter(s => scoreMap[s.requirement_code]?.score).length;
   const progress = standards.length > 0 ? (scored / standards.length) * 100 : 0;
 
-  // Group by chapter
   const chapters = {};
   standards.forEach(s => {
     if (!chapters[s.chapter_code]) {
@@ -96,9 +96,7 @@ export default function MentorStandardsTab({ traineeEmail, assignmentId }) {
                       {sc?.score ? (
                         <div className="space-y-1">
                           <ScoreChip score={sc.score} selected size="sm" />
-                          {sc.finding && (
-                            <p className="text-xs text-muted-foreground mt-1 italic">{sc.finding}</p>
-                          )}
+                          {sc.finding && <p className="text-xs text-muted-foreground mt-1 italic">{sc.finding}</p>}
                         </div>
                       ) : (
                         <span className="text-xs text-slate-400 italic">Not yet scored</span>

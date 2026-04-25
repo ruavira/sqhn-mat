@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getTraineeProfile } from '@/functions/getTraineeProfile';
 import AppHeader from '@/components/shared/AppHeader';
 import BottomNav from '@/components/shared/BottomNav';
 import StatusChip from '@/components/shared/StatusChip';
-import MentorStandardsTab from '@/components/mentor/MentorStandardsTab';
-import MentorConferencesTab from '@/components/mentor/MentorConferencesTab';
-import CompetencyTab from '@/components/mentor/CompetencyTab';
+import MentorStandardsTab from '@/components/mentor/MentorStandardsTab.jsx';
+import MentorConferencesTab from '@/components/mentor/MentorConferencesTab.jsx';
+import CompetencyTab from '@/components/mentor/CompetencyTab.jsx';
 import { Loader2, User, MapPin, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -16,14 +16,16 @@ export default function TraineeProfile() {
   const assignmentId = window.location.pathname.split('/').pop();
   const [activeTab, setActiveTab] = useState(0);
 
-  const { data: assignment, isLoading } = useQuery({
-    queryKey: ['assignment', assignmentId],
+  const { data, isLoading } = useQuery({
+    queryKey: ['trainee-profile', assignmentId],
     queryFn: async () => {
-      const all = await base44.entities.MentorTraineeAssignment.list();
-      return all.find(a => a.id === assignmentId);
+      const res = await getTraineeProfile({ assignment_id: assignmentId });
+      return res.data;
     },
     enabled: !!assignmentId,
   });
+
+  const assignment = data?.assignment;
 
   if (isLoading || !assignment) {
     return (
@@ -38,7 +40,6 @@ export default function TraineeProfile() {
       <AppHeader title="Trainee Profile" showBack backPath="/dashboard" />
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
-        {/* Trainee Info */}
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -68,16 +69,13 @@ export default function TraineeProfile() {
           )}
         </div>
 
-        {/* Tab Bar */}
         <div className="flex bg-muted rounded-xl p-1">
           {TABS.map((tab, idx) => (
             <button
               key={tab}
               onClick={() => setActiveTab(idx)}
               className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                activeTab === idx
-                  ? 'bg-white text-primary shadow-sm'
-                  : 'text-muted-foreground'
+                activeTab === idx ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground'
               }`}
             >
               {tab}
@@ -85,17 +83,18 @@ export default function TraineeProfile() {
           ))}
         </div>
 
-        {/* Tab Content */}
         {activeTab === 0 && (
           <MentorStandardsTab
             traineeEmail={assignment.trainee_email}
             assignmentId={assignment.id}
+            initialScores={data?.scores}
           />
         )}
         {activeTab === 1 && (
           <MentorConferencesTab
             traineeEmail={assignment.trainee_email}
             assignmentId={assignment.id}
+            initialConferences={data?.conferences}
           />
         )}
         {activeTab === 2 && (
@@ -103,6 +102,7 @@ export default function TraineeProfile() {
             traineeEmail={assignment.trainee_email}
             assignmentId={assignment.id}
             assignmentData={assignment}
+            initialCompetency={data?.competency}
           />
         )}
       </div>

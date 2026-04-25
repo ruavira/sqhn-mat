@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getTraineeProfile } from '@/functions/getTraineeProfile';
+import { saveConferenceRecord } from '@/functions/saveConferenceRecord';
 import { getSession } from '@/lib/sqhnSession';
 import AppHeader from '@/components/shared/AppHeader';
 import BottomNav from '@/components/shared/BottomNav';
@@ -25,42 +25,26 @@ const EXIT_AGENDA = [
 export default function ExitConference() {
   const session = getSession();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [notes, setNotes] = useState('');
   const [existingId, setExistingId] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [completedAt, setCompletedAt] = useState(null);
-
-  const { data: records = [], isLoading } = useQuery({
-    queryKey: ['exit-conference', session?.email, session?.assignment_id],
-    queryFn: () => base44.entities.ConferenceRecord.filter({
-      trainee_email: session.email,
-      assignment_id: session.assignment_id,
-      conference_type: 'exit',
-    }),
-    enabled: !!session?.email && !!session?.assignment_id,
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (records.length > 0) {
-      const record = records[0];
-      setExistingId(record.id);
-      setNotes(record.notes || '');
-      setIsCompleted(record.status === 'completed');
-      setCompletedAt(record.completed_at);
-    }
-  }, [records]);
-
-  const saveMutation = useMutation({
-    mutationFn: async (data) => {
-      if (existingId) {
-        return base44.entities.ConferenceRecord.update(existingId, data);
+    if (!session?.assignment_id) return;
+    getTraineeProfile({ assignment_id: session.assignment_id }).then(res => {
+      const conferences = res.data?.conferences || [];
+      const record = conferences.find(c => c.conference_type === 'exit');
+      if (record) {
+        setExistingId(record.id);
+        setNotes(record.notes || '');
+        setIsCompleted(record.status === 'completed');
+        setCompletedAt(record.completed_at);
       }
-      const created = await base44.entities.ConferenceRecord.create(data);
-      setExistingId(created.id);
-      return created;
-    },
-  });
+      setIsLoading(false);
+    });
+  }, [session?.assignment_id]);
 
   const buildPayload = useCallback((overrides = {}) => ({
     trainee_email: session.email,
@@ -68,26 +52,30 @@ export default function ExitConference() {
     conference_type: 'exit',
     notes,
     status: isCompleted ? 'completed' : (notes ? 'in_progress' : 'not_started'),
+    record_id: existingId || null,
     ...overrides,
-  }), [notes, isCompleted, session]);
+  }), [notes, isCompleted, session, existingId]);
 
   useEffect(() => {
     if (isLoading || isCompleted) return;
-    const timer = setTimeout(() => {
-      saveMutation.mutate(buildPayload());
+    const timer = setTimeout(async () => {
+      const res = await saveConferenceRecord(buildPayload());
+      const saved = res.data?.record;
+      if (saved?.id && !existingId) setExistingId(saved.id);
     }, 1000);
     return () => clearTimeout(timer);
   }, [notes]);
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const payload = buildPayload({
       status: 'completed',
       completed_at: new Date().toISOString(),
     });
-    saveMutation.mutate(payload);
+    const res = await saveConferenceRecord(payload);
+    const saved = res.data?.record;
+    if (saved?.id && !existingId) setExistingId(saved.id);
     setIsCompleted(true);
     setCompletedAt(payload.completed_at);
-    queryClient.invalidateQueries({ queryKey: ['exit-conference'] });
     toast({ title: 'Exit Conference', description: 'Marked as complete.' });
   };
 
@@ -129,13 +117,7 @@ export default function ExitConference() {
 
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Conference Notes</label>
-          <Textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder="Conference notes..."
-            className="min-h-[100px]"
-            disabled={isCompleted}
-          />
+          <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Conference notes..." className="min-h-[100px]" disabled={isCompleted} />
         </div>
 
         {!isCompleted && (

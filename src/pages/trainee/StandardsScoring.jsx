@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getAbridgedStandards } from '@/functions/getAbridgedStandards';
+import { getTraineeScores } from '@/functions/getTraineeScores';
+import { saveStandardsScore } from '@/functions/saveStandardsScore';
 import { getSession } from '@/lib/sqhnSession';
 import AppHeader from '@/components/shared/AppHeader';
 import BottomNav from '@/components/shared/BottomNav';
@@ -19,27 +21,31 @@ export default function StandardsScoring() {
   const [localScores, setLocalScores] = useState({});
   const saveTimers = useRef({});
 
-  const { data: standards = [], isLoading: loadingStandards } = useQuery({
+  const { data: standardsData, isLoading: loadingStandards } = useQuery({
     queryKey: ['abridged-standards'],
-    queryFn: () => base44.entities.AbridgedStandard.list('order_index', 100),
+    queryFn: async () => {
+      const res = await getAbridgedStandards({});
+      return res.data?.standards || [];
+    },
   });
 
-  const { data: existingScores = [], isLoading: loadingScores } = useQuery({
+  const { data: scoresData, isLoading: loadingScores } = useQuery({
     queryKey: ['trainee-scores', session?.email, session?.assignment_id],
-    queryFn: () => base44.entities.StandardsScore.filter({
-      trainee_email: session.email,
-      assignment_id: session.assignment_id,
-    }),
+    queryFn: async () => {
+      const res = await getTraineeScores({ trainee_email: session.email, assignment_id: session.assignment_id });
+      return res.data?.scores || [];
+    },
     enabled: !!session?.email && !!session?.assignment_id,
   });
 
-  // Initialize local scores from existing
+  const standards = standardsData || [];
+  const existingScores = scoresData || [];
+
   useEffect(() => {
     const map = {};
     existingScores.forEach(s => {
       map[s.requirement_code] = { id: s.id, score: s.score, finding: s.finding || '' };
     });
-    // Merge with any pending offline saves
     const pending = getPendingScores();
     Object.entries(pending).forEach(([code, data]) => {
       map[code] = { ...map[code], ...data };
@@ -48,9 +54,8 @@ export default function StandardsScoring() {
   }, [existingScores]);
 
   function getPendingScores() {
-    try {
-      return JSON.parse(localStorage.getItem(OFFLINE_KEY) || '{}');
-    } catch { return {}; }
+    try { return JSON.parse(localStorage.getItem(OFFLINE_KEY) || '{}'); }
+    catch { return {}; }
   }
 
   function setPendingScore(code, data) {
@@ -74,60 +79,42 @@ export default function StandardsScoring() {
       assignment_id: session.assignment_id,
       chapter_code: standard.chapter_code,
       chapter_name: standard.chapter_name,
+      standard_code: standard.standard_code,
+      standard_name: standard.standard_name,
       requirement_code: requirementCode,
       requirement_text: standard.requirement_text,
       score: data.score,
       finding: data.finding || '',
-      assessed_at: new Date().toISOString(),
+      score_id: data.id || null,
     };
 
     try {
-      if (data.id) {
-        await base44.entities.StandardsScore.update(data.id, payload);
-      } else {
-        const created = await base44.entities.StandardsScore.create(payload);
+      const res = await saveStandardsScore(payload);
+      const saved = res.data?.record;
+      if (saved?.id && !data.id) {
         setLocalScores(prev => ({
           ...prev,
-          [requirementCode]: { ...prev[requirementCode], id: created.id },
+          [requirementCode]: { ...prev[requirementCode], id: saved.id },
         }));
       }
       clearPendingScore(requirementCode);
     } catch {
-      // Store offline for retry
       setPendingScore(requirementCode, { score: data.score, finding: data.finding });
     }
   }, [localScores, session]);
 
   const handleScoreChange = (requirementCode, score, standard) => {
-    setLocalScores(prev => ({
-      ...prev,
-      [requirementCode]: { ...prev[requirementCode], score },
-    }));
-
-    // Debounced save
-    if (saveTimers.current[requirementCode]) {
-      clearTimeout(saveTimers.current[requirementCode]);
-    }
-    saveTimers.current[requirementCode] = setTimeout(() => {
-      saveScore(requirementCode, standard);
-    }, 1000);
+    setLocalScores(prev => ({ ...prev, [requirementCode]: { ...prev[requirementCode], score } }));
+    if (saveTimers.current[requirementCode]) clearTimeout(saveTimers.current[requirementCode]);
+    saveTimers.current[requirementCode] = setTimeout(() => saveScore(requirementCode, standard), 1000);
   };
 
   const handleFindingChange = (requirementCode, finding, standard) => {
-    setLocalScores(prev => ({
-      ...prev,
-      [requirementCode]: { ...prev[requirementCode], finding },
-    }));
-
-    if (saveTimers.current[requirementCode]) {
-      clearTimeout(saveTimers.current[requirementCode]);
-    }
-    saveTimers.current[requirementCode] = setTimeout(() => {
-      saveScore(requirementCode, standard);
-    }, 1000);
+    setLocalScores(prev => ({ ...prev, [requirementCode]: { ...prev[requirementCode], finding } }));
+    if (saveTimers.current[requirementCode]) clearTimeout(saveTimers.current[requirementCode]);
+    saveTimers.current[requirementCode] = setTimeout(() => saveScore(requirementCode, standard), 1000);
   };
 
-  // Retry pending on reconnect
   useEffect(() => {
     const handleOnline = () => {
       const pending = getPendingScores();
@@ -148,7 +135,6 @@ export default function StandardsScoring() {
     );
   }
 
-  // Group by chapter
   const chapters = {};
   standards.forEach(s => {
     if (!chapters[s.chapter_code]) {
@@ -169,7 +155,6 @@ export default function StandardsScoring() {
       <AppHeader title="Standards Assessment" />
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
-        {/* Progress */}
         <div className="space-y-1.5">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{scoredCount} of {standards.length} scored</span>
@@ -178,7 +163,6 @@ export default function StandardsScoring() {
           <Progress value={progress} className="h-2" />
         </div>
 
-        {/* Chapters */}
         {Object.values(chapters).map(chapter => {
           const isExpanded = expandedChapters[chapter.code] !== false;
           const chapterScored = chapter.items.filter(i => localScores[i.requirement_code]?.score).length;
@@ -214,11 +198,7 @@ export default function StandardsScoring() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-foreground leading-relaxed">
-                          {item.requirement_text}
-                        </p>
-
-                        {/* Score Chips */}
+                        <p className="text-sm text-foreground leading-relaxed">{item.requirement_text}</p>
                         <div className="grid grid-cols-4 gap-1.5">
                           {SCORE_OPTIONS.map(opt => (
                             <ScoreChip
@@ -230,8 +210,6 @@ export default function StandardsScoring() {
                             />
                           ))}
                         </div>
-
-                        {/* Finding */}
                         {scoreData?.score && (
                           <Textarea
                             value={scoreData.finding || ''}

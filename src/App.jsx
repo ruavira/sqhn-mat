@@ -8,9 +8,9 @@ import PageNotFound from './lib/PageNotFound';
 import Home from './pages/Home';
 import SignIn from './pages/SignIn';
 import MentorDashboard from './pages/MentorDashboard';
-import TraineeProfile from './pages/TraineeProfile';
+import TraineeProfile from './pages/TraineeProfile.jsx';
 import EntranceConference from './pages/trainee/EntranceConference.jsx';
-import StandardsScoring from './pages/trainee/StandardsScoring';
+import StandardsScoring from './pages/trainee/StandardsScoring.jsx';
 import ExitConference from './pages/trainee/ExitConference.jsx';
 import RequireAuth from './components/shared/RequireAuth';
 

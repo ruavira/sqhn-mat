@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { useQueryClient } from '@tanstack/react-query';
+import { saveCompetencyAssessment } from '@/functions/saveCompetencyAssessment';
 import { getSession } from '@/lib/sqhnSession';
 import { SQHN_DOMAINS, NEEDS_DEVELOPMENT_COMMENTS } from '@/lib/competencyData';
 import { Card } from '@/components/ui/card';
@@ -9,10 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-export default function CompetencyTab({ traineeEmail, assignmentId, assignmentData }) {
+export default function CompetencyTab({ traineeEmail, assignmentId, assignmentData, initialCompetency }) {
   const session = getSession();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -24,42 +24,23 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
   const [mentorSignature, setMentorSignature] = useState('');
   const [existingId, setExistingId] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const { data: existingAssessments = [], isLoading } = useQuery({
-    queryKey: ['competency', traineeEmail, assignmentId],
-    queryFn: () => base44.entities.CompetencyAssessment.filter({
-      trainee_email: traineeEmail,
-      assignment_id: assignmentId,
-    }),
-  });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (existingAssessments.length > 0) {
-      const existing = existingAssessments[0];
-      setExistingId(existing.id);
-      setDomainScores(existing.domain_scores || {});
-      setOverallOutcome(existing.overall_outcome || '');
-      setOverallComments(existing.overall_comments || '');
-      setFeedbackForTrainee(existing.feedback_for_trainee || '');
-      setMentorSignature(existing.mentor_signature || '');
-      setIsSubmitted(existing.status === 'submitted');
+    if (initialCompetency) {
+      setExistingId(initialCompetency.id);
+      setDomainScores(initialCompetency.domain_scores || {});
+      setOverallOutcome(initialCompetency.overall_outcome || '');
+      setOverallComments(initialCompetency.overall_comments || '');
+      setFeedbackForTrainee(initialCompetency.feedback_for_trainee || '');
+      setMentorSignature(initialCompetency.mentor_signature || '');
+      setIsSubmitted(initialCompetency.status === 'submitted');
     }
-  }, [existingAssessments]);
+  }, [initialCompetency]);
 
-  const saveMutation = useMutation({
-    mutationFn: async (data) => {
-      if (existingId) {
-        return base44.entities.CompetencyAssessment.update(existingId, data);
-      }
-      const created = await base44.entities.CompetencyAssessment.create(data);
-      setExistingId(created.id);
-      return created;
-    },
-  });
-
-  const autoSave = useCallback(() => {
+  const autoSave = useCallback(async () => {
     if (isSubmitted) return;
-    const data = {
+    const payload = {
       mentor_email: session.email,
       trainee_email: traineeEmail,
       assignment_id: assignmentId,
@@ -69,12 +50,15 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
       feedback_for_trainee: feedbackForTrainee,
       mentor_signature: mentorSignature,
       status: 'draft',
+      assessment_id: existingId || null,
     };
-    saveMutation.mutate(data);
-  }, [domainScores, overallOutcome, overallComments, feedbackForTrainee, mentorSignature, isSubmitted]);
+    const res = await saveCompetencyAssessment(payload);
+    const saved = res.data?.record;
+    if (saved?.id && !existingId) setExistingId(saved.id);
+  }, [domainScores, overallOutcome, overallComments, feedbackForTrainee, mentorSignature, isSubmitted, existingId]);
 
   useEffect(() => {
-    if (isSubmitted || isLoading) return;
+    if (isSubmitted) return;
     const timer = setTimeout(autoSave, 2000);
     return () => clearTimeout(timer);
   }, [domainScores, overallOutcome, overallComments, feedbackForTrainee, mentorSignature]);
@@ -96,10 +80,7 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
   };
 
   const handleCommentChange = (indicatorId, comment) => {
-    setDomainScores(prev => ({
-      ...prev,
-      [indicatorId]: { ...prev[indicatorId], comment },
-    }));
+    setDomainScores(prev => ({ ...prev, [indicatorId]: { ...prev[indicatorId], comment } }));
   };
 
   const handleSubmit = async () => {
@@ -107,7 +88,8 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
       toast({ title: 'Missing fields', description: 'Please select an outcome and provide your signature.', variant: 'destructive' });
       return;
     }
-    const data = {
+    setSaving(true);
+    const payload = {
       mentor_email: session.email,
       trainee_email: traineeEmail,
       assignment_id: assignmentId,
@@ -118,30 +100,15 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
       mentor_signature: mentorSignature,
       signed_at: new Date().toISOString(),
       status: 'submitted',
+      assessment_id: existingId || null,
+      update_assignment: true,
     };
-
-    if (existingId) {
-      await base44.entities.CompetencyAssessment.update(existingId, data);
-    } else {
-      await base44.entities.CompetencyAssessment.create(data);
-    }
-
-    // Update assignment
-    await base44.entities.MentorTraineeAssignment.update(assignmentId, {
-      status: 'submitted',
-      result: overallOutcome,
-      result_submitted_at: new Date().toISOString(),
-    });
-
+    await saveCompetencyAssessment(payload);
     setIsSubmitted(true);
-    queryClient.invalidateQueries({ queryKey: ['competency'] });
+    setSaving(false);
     queryClient.invalidateQueries({ queryKey: ['mentor-assignments'] });
     toast({ title: 'Assessment submitted', description: 'Competency assessment has been submitted successfully.' });
   };
-
-  if (isLoading) {
-    return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
-  }
 
   const totalIndicators = SQHN_DOMAINS.reduce((sum, d) => sum + d.indicators.length, 0);
   const assessedIndicators = Object.keys(domainScores).length;
@@ -152,7 +119,6 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
 
   return (
     <div className="space-y-4">
-      {/* Progress */}
       <div className="space-y-1.5">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{assessedIndicators} of {totalIndicators} indicators assessed</span>
@@ -161,25 +127,14 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
         <Progress value={overallProgress} className="h-2" />
       </div>
 
-      {/* Domain Navigation */}
       <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCurrentDomain(prev => Math.max(0, prev - 1))}
-          disabled={currentDomain === 0}
-        >
+        <Button variant="ghost" size="sm" onClick={() => setCurrentDomain(prev => Math.max(0, prev - 1))} disabled={currentDomain === 0}>
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <span className="text-xs font-semibold text-muted-foreground">
           {showSummary ? 'Summary & Submission' : `Domain ${domain.id} of ${SQHN_DOMAINS.length}`}
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCurrentDomain(prev => Math.min(SQHN_DOMAINS.length, prev + 1))}
-          disabled={showSummary}
-        >
+        <Button variant="ghost" size="sm" onClick={() => setCurrentDomain(prev => Math.min(SQHN_DOMAINS.length, prev + 1))} disabled={showSummary}>
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
@@ -194,71 +149,35 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
         </Card>
       )}
 
-      {/* Domain Content or Summary */}
       {showSummary ? (
         <div className="space-y-4">
           <Card className="p-4 space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Overall Outcome *
-              </label>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Overall Outcome *</label>
               <Select value={overallOutcome} onValueChange={setOverallOutcome} disabled={isSubmitted}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select outcome" />
-                </SelectTrigger>
+                <SelectTrigger className="h-12"><SelectValue placeholder="Select outcome" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Recommended for Certification">Recommended for Certification</SelectItem>
                   <SelectItem value="Recommended for Mentored Assessment 2">Recommended for Mentored Assessment 2</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Overall Comments
-              </label>
-              <Textarea
-                value={overallComments}
-                onChange={e => setOverallComments(e.target.value)}
-                placeholder="Overall assessment comments..."
-                className="min-h-[80px]"
-                disabled={isSubmitted}
-              />
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Overall Comments</label>
+              <Textarea value={overallComments} onChange={e => setOverallComments(e.target.value)} placeholder="Overall assessment comments..." className="min-h-[80px]" disabled={isSubmitted} />
             </div>
-
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Feedback for Trainee
-              </label>
-              <Textarea
-                value={feedbackForTrainee}
-                onChange={e => setFeedbackForTrainee(e.target.value)}
-                placeholder="Feedback that will be shared with the trainee..."
-                className="min-h-[80px]"
-                disabled={isSubmitted}
-              />
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Feedback for Trainee</label>
+              <Textarea value={feedbackForTrainee} onChange={e => setFeedbackForTrainee(e.target.value)} placeholder="Feedback that will be shared with the trainee..." className="min-h-[80px]" disabled={isSubmitted} />
             </div>
-
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Mentor Signature *
-              </label>
-              <Input
-                value={mentorSignature}
-                onChange={e => setMentorSignature(e.target.value)}
-                placeholder="Type your full name as signature"
-                className="h-12"
-                disabled={isSubmitted}
-              />
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Mentor Signature *</label>
+              <Input value={mentorSignature} onChange={e => setMentorSignature(e.target.value)} placeholder="Type your full name as signature" className="h-12" disabled={isSubmitted} />
             </div>
           </Card>
-
           {!isSubmitted && (
-            <Button
-              onClick={handleSubmit}
-              className="w-full h-12 rounded-xl text-base font-semibold"
-            >
-              Submit Assessment
+            <Button onClick={handleSubmit} disabled={saving} className="w-full h-12 rounded-xl text-base font-semibold">
+              {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Submit Assessment'}
             </Button>
           )}
         </div>
@@ -279,34 +198,20 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
                     onClick={() => handleIndicatorToggle(indicator.id, 'pass')}
                     disabled={isSubmitted}
                     className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${
-                      score?.result === 'pass'
-                        ? 'bg-green-100 text-green-700 border-green-300 ring-2 ring-green-200'
-                        : 'bg-slate-50 text-slate-400 border-slate-200'
+                      score?.result === 'pass' ? 'bg-green-100 text-green-700 border-green-300 ring-2 ring-green-200' : 'bg-slate-50 text-slate-400 border-slate-200'
                     }`}
-                  >
-                    Pass
-                  </button>
+                  >Pass</button>
                   <button
                     type="button"
                     onClick={() => handleIndicatorToggle(indicator.id, 'needs_development')}
                     disabled={isSubmitted}
                     className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${
-                      score?.result === 'needs_development'
-                        ? 'bg-amber-100 text-amber-700 border-amber-300 ring-2 ring-amber-200'
-                        : 'bg-slate-50 text-slate-400 border-slate-200'
+                      score?.result === 'needs_development' ? 'bg-amber-100 text-amber-700 border-amber-300 ring-2 ring-amber-200' : 'bg-slate-50 text-slate-400 border-slate-200'
                     }`}
-                  >
-                    Needs Development
-                  </button>
+                  >Needs Development</button>
                 </div>
                 {score?.result === 'needs_development' && (
-                  <Textarea
-                    value={score.comment || ''}
-                    onChange={e => handleCommentChange(indicator.id, e.target.value)}
-                    placeholder="Comment..."
-                    className="text-xs min-h-[60px]"
-                    disabled={isSubmitted}
-                  />
+                  <Textarea value={score.comment || ''} onChange={e => handleCommentChange(indicator.id, e.target.value)} placeholder="Comment..." className="text-xs min-h-[60px]" disabled={isSubmitted} />
                 )}
               </Card>
             );
