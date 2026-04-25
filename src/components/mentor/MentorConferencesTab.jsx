@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getTraineeProfile } from '@/functions/getTraineeProfile';
 import { saveConferenceRecord } from '@/functions/saveConferenceRecord';
+import { saveMentorConferenceRatings } from '@/functions/saveMentorConferenceRatings';
 import { getSession } from '@/lib/sqhnSession';
 import { Card } from '@/components/ui/card';
 import StatusChip from '@/components/shared/StatusChip';
-import { LogIn, LogOut, Clock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LogIn, LogOut, Clock, Loader2, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ENTRANCE_AGENDA = [
@@ -32,13 +34,11 @@ const RATINGS = [
   { value: 'needs_improvement', label: 'Needs Improvement', activeClass: 'bg-amber-100 text-amber-700 border-amber-300 ring-2 ring-amber-200' },
 ];
 
-function ConferenceCard({ record, type, agenda, onRatingChange, onCommentChange, saving }) {
-  const icon = type === 'entrance' ? LogIn : LogOut;
-  const Icon = icon;
+function ConferenceCard({ record, type, agenda, onRatingChange, onCommentChange, onSave, isSaving }) {
+  const Icon = type === 'entrance' ? LogIn : LogOut;
   const title = type === 'entrance' ? 'Entrance Conference' : 'Exit Conference';
   const ratings = record?.item_ratings || {};
   const comments = record?.item_comments || {};
-
   const rated = agenda.filter((_, i) => ratings[i]).length;
 
   return (
@@ -53,13 +53,10 @@ function ConferenceCard({ record, type, agenda, onRatingChange, onCommentChange,
             <p className="text-xs text-muted-foreground">{rated}/{agenda.length} rated</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {saving && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
-          <StatusChip status={record?.status || 'not_started'} />
-        </div>
+        <StatusChip status={record?.status || 'not_started'} />
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {agenda.map((item, idx) => {
           const currentRating = ratings[idx];
           return (
@@ -104,11 +101,23 @@ function ConferenceCard({ record, type, agenda, onRatingChange, onCommentChange,
       )}
 
       {record?.status === 'completed' && record.completed_at && (
-        <div className="flex items-center gap-1.5 text-xs text-green-600 pt-1 border-t border-border">
+        <div className="flex items-center gap-1.5 text-xs text-green-600 border-t border-border pt-3">
           <Clock className="w-3 h-3" />
           Completed {format(new Date(record.completed_at), 'dd MMM yyyy, HH:mm')}
         </div>
       )}
+
+      <div className="border-t border-border pt-3">
+        <Button
+          size="sm"
+          className="w-full"
+          onClick={onSave}
+          disabled={isSaving}
+        >
+          {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : null}
+          {isSaving ? 'Saving…' : 'Save Ratings & Comments'}
+        </Button>
+      </div>
     </Card>
   );
 }
@@ -176,6 +185,23 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
     });
   }, [saveRecord]);
 
+  const handleSave = useCallback(async (type, agenda) => {
+    const record = conferences.find(r => r.conference_type === type);
+    const ratings = record?.item_ratings || {};
+    const comments = record?.item_comments || {};
+
+    const item_assessments = agenda.map((label, idx) => ({
+      item_index: idx,
+      item_label: label,
+      rating: ratings[idx] || null,
+      comment: comments[idx] || '',
+    }));
+
+    setSaving(prev => ({ ...prev, [type]: true }));
+    await saveMentorConferenceRatings({ assignment_id: assignmentId, conference_type: type, item_assessments });
+    setSaving(prev => ({ ...prev, [type]: false }));
+  }, [conferences, assignmentId]);
+
   const handleCommentChange = useCallback((type, itemIndex, comment) => {
     setConferences(prev => {
       const updated = [...prev];
@@ -211,7 +237,8 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
         agenda={ENTRANCE_AGENDA}
         onRatingChange={handleRatingChange}
         onCommentChange={handleCommentChange}
-        saving={saving.entrance}
+        onSave={() => handleSave('entrance', ENTRANCE_AGENDA)}
+        isSaving={saving.entrance}
       />
       <ConferenceCard
         record={exit}
@@ -219,7 +246,8 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
         agenda={EXIT_AGENDA}
         onRatingChange={handleRatingChange}
         onCommentChange={handleCommentChange}
-        saving={saving.exit}
+        onSave={() => handleSave('exit', EXIT_AGENDA)}
+        isSaving={saving.exit}
       />
     </div>
   );
