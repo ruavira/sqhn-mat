@@ -7,14 +7,17 @@ import StatusChip from '@/components/shared/StatusChip';
 import MentorStandardsTab from '@/components/mentor/MentorStandardsTab.jsx';
 import MentorConferencesTab from '@/components/mentor/MentorConferencesTab.jsx';
 import CompetencyTab from '@/components/mentor/CompetencyTab.jsx';
+import MentorNotesTab from '@/components/mentor/MentorNotesTab.jsx';
 import { Loader2, User, MapPin, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import { getSession } from '@/lib/sqhnSession';
 
-const TABS = ['Standards', 'Conferences', 'Competency'];
+const TABS = ['Standards', 'Conferences', 'Competency', 'Session Journal'];
 
 export default function TraineeProfile() {
   const assignmentId = window.location.pathname.split('/').pop();
   const [activeTab, setActiveTab] = useState(0);
+  const session = getSession();
 
   const { data, isLoading } = useQuery({
     queryKey: ['trainee-profile', assignmentId],
@@ -69,12 +72,12 @@ export default function TraineeProfile() {
           )}
         </div>
 
-        <div className="flex bg-muted rounded-xl p-1">
+        <div className="flex bg-muted rounded-xl p-1 overflow-x-auto">
           {TABS.map((tab, idx) => (
             <button
               key={tab}
               onClick={() => setActiveTab(idx)}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              className={`flex-1 py-2 px-1 rounded-lg text-[11px] font-semibold transition-all duration-200 whitespace-nowrap min-w-0 ${
                 activeTab === idx ? 'bg-white text-primary shadow-sm' : 'text-muted-foreground'
               }`}
             >
@@ -103,6 +106,14 @@ export default function TraineeProfile() {
             assignmentId={assignment.id}
             assignmentData={assignment}
             initialCompetency={data?.competency}
+          />
+        )}
+        {activeTab === 3 && (
+          <MentorNotesTab
+            assignmentId={assignment.id}
+            traineeEmail={assignment.trainee_email}
+            mentorEmail={session?.email || ''}
+            sessionNumber={assignment.current_ma_session || assignment.session_number || 1}
           />
         )}
       </div>
