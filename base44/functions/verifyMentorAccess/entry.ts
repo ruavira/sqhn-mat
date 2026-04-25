@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     const qualcrestClient = createClient({
       appId: QUALCREST_APP_ID,
       serviceToken,
-      serverUrl: '',
+      serverUrl: 'https://base44.app',
       requiresAuth: false,
     });
 
