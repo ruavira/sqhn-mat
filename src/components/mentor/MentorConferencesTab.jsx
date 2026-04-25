@@ -1,27 +1,96 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getTraineeProfile } from '@/functions/getTraineeProfile';
+import { saveConferenceRecord } from '@/functions/saveConferenceRecord';
+import { getSession } from '@/lib/sqhnSession';
 import { Card } from '@/components/ui/card';
 import StatusChip from '@/components/shared/StatusChip';
-import { LogIn, LogOut, Clock, Loader2 } from 'lucide-react';
+import { LogIn, LogOut, Clock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
-function ConferenceCard({ record, type, icon: Icon }) {
+const ENTRANCE_AGENDA = [
+  'Introduce the survey team to facility leadership',
+  'Confirm the survey schedule with facility management',
+  'Submit the documentation request list',
+  'Explain the survey objectives and process clearly',
+  'Address questions from facility leadership professionally',
+  'Declare any conflict of interest',
+  'Confirm scope of survey (services and conditional chapters)',
+];
+
+const EXIT_AGENDA = [
+  'Present preliminary findings to facility leadership',
+  'Communicate all critical findings clearly',
+  'Provide context and explanation for scores given',
+  'Explain recommendations and next steps',
+  'Allow facility to ask questions and respond appropriately',
+  'Discuss CAPA expectations for identified findings',
+  'Maintain professional composure throughout',
+];
+
+const RATINGS = [
+  { value: 'satisfactory', label: 'Satisfactory', activeClass: 'bg-green-100 text-green-700 border-green-300 ring-2 ring-green-200' },
+  { value: 'needs_improvement', label: 'Needs Improvement', activeClass: 'bg-amber-100 text-amber-700 border-amber-300 ring-2 ring-amber-200' },
+];
+
+function ConferenceCard({ record, type, agenda, onRatingChange, saving }) {
+  const icon = type === 'entrance' ? LogIn : LogOut;
+  const Icon = icon;
   const title = type === 'entrance' ? 'Entrance Conference' : 'Exit Conference';
+  const ratings = record?.item_ratings || {};
+
+  const rated = agenda.filter((_, i) => ratings[i]).length;
 
   return (
-    <Card className="p-4 space-y-3">
+    <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Icon className="w-4 h-4 text-primary" />
           </div>
-          <h4 className="font-semibold text-sm">{title}</h4>
+          <div>
+            <h4 className="font-semibold text-sm">{title}</h4>
+            <p className="text-xs text-muted-foreground">{rated}/{agenda.length} rated</p>
+          </div>
         </div>
-        <StatusChip status={record?.status || 'not_started'} />
+        <div className="flex items-center gap-2">
+          {saving && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+          <StatusChip status={record?.status || 'not_started'} />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {agenda.map((item, idx) => {
+          const currentRating = ratings[idx];
+          return (
+            <div key={idx} className="space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">
+                  {idx + 1}
+                </span>
+                <span className="text-sm text-foreground leading-relaxed">{item}</span>
+              </div>
+              <div className="flex gap-2 pl-7">
+                {RATINGS.map(r => (
+                  <button
+                    key={r.value}
+                    onClick={() => onRatingChange(type, idx, r.value)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                      currentRating === r.value
+                        ? r.activeClass
+                        : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {record?.notes && (
-        <p className="text-xs text-muted-foreground italic">{record.notes}</p>
+        <p className="text-xs text-muted-foreground italic border-t border-border pt-3">{record.notes}</p>
       )}
 
       {record?.status === 'completed' && record.completed_at && (
@@ -35,8 +104,10 @@ function ConferenceCard({ record, type, icon: Icon }) {
 }
 
 export default function MentorConferencesTab({ traineeEmail, assignmentId, initialConferences }) {
+  const session = getSession();
   const [conferences, setConferences] = useState(initialConferences || []);
   const [loading, setLoading] = useState(!initialConferences);
+  const [saving, setSaving] = useState({ entrance: false, exit: false });
 
   useEffect(() => {
     if (initialConferences) return;
@@ -45,6 +116,61 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
       setLoading(false);
     });
   }, [assignmentId]);
+
+  const handleRatingChange = useCallback(async (type, itemIndex, rating) => {
+    // Update local state
+    setConferences(prev => {
+      const updated = [...prev];
+      const idx = updated.findIndex(r => r.conference_type === type);
+      if (idx === -1) {
+        // No record yet — create a local placeholder, save will create it
+        updated.push({ conference_type: type, item_ratings: { [itemIndex]: rating }, status: 'in_progress' });
+      } else {
+        const rec = { ...updated[idx] };
+        const currentRating = rec.item_ratings?.[itemIndex];
+        rec.item_ratings = {
+          ...(rec.item_ratings || {}),
+          // Toggle off if same rating clicked
+          [itemIndex]: currentRating === rating ? undefined : rating,
+        };
+        // Clean up undefined values
+        Object.keys(rec.item_ratings).forEach(k => {
+          if (rec.item_ratings[k] === undefined) delete rec.item_ratings[k];
+        });
+        updated[idx] = rec;
+      }
+      return updated;
+    });
+
+    // Save to backend
+    setSaving(prev => ({ ...prev, [type]: true }));
+    setConferences(current => {
+      const record = current.find(r => r.conference_type === type);
+      const payload = {
+        trainee_email: traineeEmail,
+        assignment_id: assignmentId,
+        conference_type: type,
+        item_ratings: record?.item_ratings || {},
+        notes: record?.notes || '',
+        status: record?.status || 'in_progress',
+        record_id: record?.id || null,
+      };
+      saveConferenceRecord(payload).then(res => {
+        const saved = res.data?.record;
+        if (saved) {
+          setConferences(prev => {
+            const updated = [...prev];
+            const idx = updated.findIndex(r => r.conference_type === type);
+            if (idx === -1) updated.push(saved);
+            else updated[idx] = { ...updated[idx], id: saved.id };
+            return updated;
+          });
+        }
+        setSaving(prev => ({ ...prev, [type]: false }));
+      });
+      return current;
+    });
+  }, [traineeEmail, assignmentId]);
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
@@ -55,8 +181,20 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
 
   return (
     <div className="space-y-4">
-      <ConferenceCard record={entrance} type="entrance" icon={LogIn} />
-      <ConferenceCard record={exit} type="exit" icon={LogOut} />
+      <ConferenceCard
+        record={entrance}
+        type="entrance"
+        agenda={ENTRANCE_AGENDA}
+        onRatingChange={handleRatingChange}
+        saving={saving.entrance}
+      />
+      <ConferenceCard
+        record={exit}
+        type="exit"
+        agenda={EXIT_AGENDA}
+        onRatingChange={handleRatingChange}
+        saving={saving.exit}
+      />
     </div>
   );
 }

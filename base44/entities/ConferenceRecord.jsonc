@@ -36,6 +36,17 @@
         }
       }
     },
+    "item_ratings": {
+      "type": "object",
+      "description": "Map of agenda item index (as string key) to rating: 'satisfactory' or 'needs_improvement'",
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "satisfactory",
+          "needs_improvement"
+        ]
+      }
+    },
     "notes": {
       "type": "string",
       "description": "Conference notes"
