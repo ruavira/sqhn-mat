@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getTraineeProfile } from '@/functions/getTraineeProfile';
 import { saveConferenceRecord } from '@/functions/saveConferenceRecord';
 import { getSession } from '@/lib/sqhnSession';
@@ -118,6 +118,7 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
   const [conferences, setConferences] = useState(initialConferences || []);
   const [loading, setLoading] = useState(!initialConferences);
   const [saving, setSaving] = useState({ entrance: false, exit: false });
+  const commentDebounceRef = useRef({});
 
   useEffect(() => {
     if (initialConferences) return;
@@ -179,15 +180,19 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
     setConferences(prev => {
       const updated = [...prev];
       const idx = updated.findIndex(r => r.conference_type === type);
+      let next;
       if (idx === -1) {
-        const next = [...updated, { conference_type: type, item_ratings: {}, item_comments: { [itemIndex]: comment }, status: 'in_progress' }];
-        saveRecord(type, next);
-        return next;
+        next = [...updated, { conference_type: type, item_ratings: {}, item_comments: { [itemIndex]: comment }, status: 'in_progress' }];
+      } else {
+        const rec = { ...updated[idx], item_comments: { ...(updated[idx].item_comments || {}), [itemIndex]: comment } };
+        next = [...updated];
+        next[idx] = rec;
       }
-      const rec = { ...updated[idx], item_comments: { ...(updated[idx].item_comments || {}), [itemIndex]: comment } };
-      updated[idx] = rec;
-      saveRecord(type, updated);
-      return updated;
+      // Debounce save: wait 800ms after last keystroke
+      const key = `${type}-${itemIndex}`;
+      clearTimeout(commentDebounceRef.current[key]);
+      commentDebounceRef.current[key] = setTimeout(() => saveRecord(type, next), 800);
+      return next;
     });
   }, [saveRecord]);
 
