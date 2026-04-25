@@ -4,6 +4,7 @@ import { getAbridgedStandards } from '@/functions/getAbridgedStandards';
 import { getTraineeScores } from '@/functions/getTraineeScores';
 import { saveStandardsScore } from '@/functions/saveStandardsScore';
 import { getSession } from '@/lib/sqhnSession';
+import { cacheSet, cacheGet, queueWrite } from '@/lib/offlineDb';
 import AppHeader from '@/components/shared/AppHeader';
 import BottomNav from '@/components/shared/BottomNav';
 import ScoreChip from '@/components/shared/ScoreChip';
@@ -21,11 +22,21 @@ export default function StandardsScoring() {
   const [localScores, setLocalScores] = useState({});
   const saveTimers = useRef({});
 
+  const [standardsCachedAt, setStandardsCachedAt] = useState(null);
+
   const { data: standardsData, isLoading: loadingStandards } = useQuery({
     queryKey: ['abridged-standards'],
     queryFn: async () => {
+      if (!navigator.onLine) {
+        const cached = await cacheGet('abridged-standards');
+        if (cached) { setStandardsCachedAt(cached._cachedAt); return cached.standards; }
+        return [];
+      }
       const res = await getAbridgedStandards({});
-      return res.data?.standards || [];
+      const standards = res.data?.standards || [];
+      await cacheSet('abridged-standards', { standards, _cachedAt: Date.now() }, 24 * 60);
+      setStandardsCachedAt(null);
+      return standards;
     },
   });
 
@@ -88,6 +99,11 @@ export default function StandardsScoring() {
       score_id: data.id || null,
     };
 
+    if (!navigator.onLine) {
+      await queueWrite('saveStandardsScore', payload);
+      setPendingScore(requirementCode, { score: data.score, finding: data.finding });
+      return;
+    }
     try {
       const res = await saveStandardsScore(payload);
       const saved = res.data?.record;
@@ -155,6 +171,11 @@ export default function StandardsScoring() {
       <AppHeader title="Standards Assessment" />
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
+        {standardsCachedAt && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-xs text-amber-800">
+            Standards loaded from cache. Scores entered offline will sync when reconnected.
+          </div>
+        )}
         <div className="space-y-1.5">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{scoredCount} of {standards.length} scored</span>

@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
+import { queueWrite } from '@/lib/offlineDb';
 
 const ENTRANCE_AGENDA = [
   'Introduce the survey team to facility leadership',
@@ -60,7 +61,12 @@ export default function EntranceConference() {
   useEffect(() => {
     if (isLoading || isCompleted) return;
     const timer = setTimeout(async () => {
-      const res = await saveConferenceRecord(buildPayload());
+      const payload = buildPayload();
+      if (!navigator.onLine) {
+        await queueWrite('saveConferenceRecord', payload);
+        return;
+      }
+      const res = await saveConferenceRecord(payload);
       const saved = res.data?.record;
       if (saved?.id && !existingId) setExistingId(saved.id);
     }, 1000);
@@ -72,6 +78,13 @@ export default function EntranceConference() {
       status: 'completed',
       completed_at: new Date().toISOString(),
     });
+    if (!navigator.onLine) {
+      await queueWrite('saveConferenceRecord', payload);
+      setIsCompleted(true);
+      setCompletedAt(payload.completed_at);
+      toast({ title: 'Entrance Conference', description: 'Saved offline — will sync when reconnected.' });
+      return;
+    }
     const res = await saveConferenceRecord(payload);
     const saved = res.data?.record;
     if (saved?.id && !existingId) setExistingId(saved.id);

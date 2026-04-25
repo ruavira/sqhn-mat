@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getMentorNotes } from '@/functions/getMentorNotes';
 import { saveMentorNote } from '@/functions/saveMentorNote';
+import { queueWrite } from '@/lib/offlineDb';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -241,7 +242,7 @@ export default function MentorNotesTab({ assignmentId, traineeEmail, mentorEmail
       return;
     }
     setSaving(true);
-    const res = await saveMentorNote({
+    const notePayload = {
       assignment_id: assignmentId,
       trainee_email: traineeEmail,
       mentor_email: mentorEmail,
@@ -250,7 +251,19 @@ export default function MentorNotesTab({ assignmentId, traineeEmail, mentorEmail
       note_type: noteType,
       tags: selectedTags,
       transcription_pending: false,
-    });
+    };
+    if (!navigator.onLine) {
+      await queueWrite('saveMentorNote', notePayload);
+      // Show optimistic note in the list
+      setNotes(prev => [{ ...notePayload, id: `offline-${Date.now()}`, created_at: new Date().toISOString() }, ...prev]);
+      setText('');
+      setSelectedTags([]);
+      setNoteType('text');
+      setSaving(false);
+      toast({ title: 'Saved offline', description: 'Note will sync when reconnected.' });
+      return;
+    }
+    const res = await saveMentorNote(notePayload);
     const saved = res.data?.note;
     if (saved) setNotes(prev => [saved, ...prev]);
     setText('');

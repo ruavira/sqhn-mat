@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getMentorAssignments } from '@/functions/getMentorAssignments';
 import { getSession } from '@/lib/sqhnSession';
@@ -7,15 +7,28 @@ import BottomNav from '@/components/shared/BottomNav';
 import TraineeCard from '@/components/mentor/TraineeCard';
 import { Card } from '@/components/ui/card';
 import { Users, Clock, CheckCircle2, Loader2 } from 'lucide-react';
+import { cacheSet, cacheGet } from '@/lib/offlineDb';
+import { format } from 'date-fns';
+
+const CACHE_KEY = (email) => `mentor-assignments-${email}`;
 
 export default function MentorDashboard() {
   const session = getSession();
+  const [cachedAt, setCachedAt] = useState(null);
 
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ['mentor-assignments', session?.email],
     queryFn: async () => {
+      if (!navigator.onLine) {
+        const cached = await cacheGet(CACHE_KEY(session.email));
+        if (cached) { setCachedAt(cached._cachedAt); return cached.assignments; }
+        return [];
+      }
       const res = await getMentorAssignments({ mentor_email: session.email });
-      return res.data?.assignments || [];
+      const data = res.data?.assignments || [];
+      await cacheSet(CACHE_KEY(session.email), { assignments: data, _cachedAt: Date.now() }, 120);
+      setCachedAt(null);
+      return data;
     },
     enabled: !!session?.email,
   });
@@ -31,6 +44,12 @@ export default function MentorDashboard() {
       <AppHeader title="SQHN MAT" />
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-6">
+        {cachedAt && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-xs text-amber-800">
+            Viewing cached data from {format(new Date(cachedAt), 'dd MMM, HH:mm')}. Connect to internet to refresh.
+          </div>
+        )}
+
         {/* Welcome */}
         <div>
           <h2 className="text-xl font-bold text-foreground">

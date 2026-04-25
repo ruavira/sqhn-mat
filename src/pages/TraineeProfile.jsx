@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getTraineeProfile } from '@/functions/getTraineeProfile';
+import { cacheSet, cacheGet } from '@/lib/offlineDb';
+import { format } from 'date-fns';
 import AppHeader from '@/components/shared/AppHeader';
 import BottomNav from '@/components/shared/BottomNav';
 import StatusChip from '@/components/shared/StatusChip';
@@ -10,21 +12,31 @@ import CompetencyTab from '@/components/mentor/CompetencyTab.jsx';
 import MentorNotesTab from '@/components/mentor/MentorNotesTab.jsx';
 import TrainingPlanTab from '@/components/mentor/TrainingPlanTab.jsx';
 import { Loader2, User, MapPin, Calendar, FileText } from 'lucide-react';
-import { format } from 'date-fns';
 import { getSession } from '@/lib/sqhnSession';
 
 const TABS = ['Standards', 'Conferences', 'Competency', 'Session Journal', 'Training Plan'];
 
+const CACHE_KEY = (id) => `trainee-profile-${id}`;
+
 export default function TraineeProfile() {
   const assignmentId = window.location.pathname.split('/').pop();
   const [activeTab, setActiveTab] = useState(0);
+  const [cachedAt, setCachedAt] = useState(null);
   const session = getSession();
 
   const { data, isLoading } = useQuery({
     queryKey: ['trainee-profile', assignmentId],
     queryFn: async () => {
+      if (!navigator.onLine) {
+        const cached = await cacheGet(CACHE_KEY(assignmentId));
+        if (cached) { setCachedAt(cached._cachedAt); return cached.data; }
+        return null;
+      }
       const res = await getTraineeProfile({ assignment_id: assignmentId });
-      return res.data;
+      const d = res.data;
+      await cacheSet(CACHE_KEY(assignmentId), { data: d, _cachedAt: Date.now() }, 120);
+      setCachedAt(null);
+      return d;
     },
     enabled: !!assignmentId,
   });
@@ -44,6 +56,11 @@ export default function TraineeProfile() {
       <AppHeader title="Trainee Profile" showBack backPath="/dashboard" />
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
+        {cachedAt && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-xs text-amber-800">
+            Viewing cached data from {format(new Date(cachedAt), 'dd MMM, HH:mm')}. Connect to internet to refresh.
+          </div>
+        )}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">

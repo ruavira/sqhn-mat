@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getTraineeProfile } from '@/functions/getTraineeProfile';
 import { saveConferenceRecord } from '@/functions/saveConferenceRecord';
 import { saveMentorConferenceRatings } from '@/functions/saveMentorConferenceRatings';
+import { queueWrite } from '@/lib/offlineDb';
 import { getSession } from '@/lib/sqhnSession';
 import { Card } from '@/components/ui/card';
 import StatusChip from '@/components/shared/StatusChip';
@@ -225,6 +226,10 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
       record_id: record?.id || null,
     };
     setSaving(prev => ({ ...prev, [type]: true }));
+    if (!navigator.onLine) {
+      queueWrite('saveConferenceRecord', payload).then(() => setSaving(prev => ({ ...prev, [type]: false })));
+      return;
+    }
     saveConferenceRecord(payload).then(res => {
       const saved = res.data?.record;
       if (saved?.id) {
@@ -300,7 +305,15 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
     }));
 
     setSaving(prev => ({ ...prev, [type]: true }));
-    await saveMentorConferenceRatings({ assignment_id: assignmentId, conference_type: type, item_assessments });
+    const ratingsPayload = { assignment_id: assignmentId, conference_type: type, item_assessments };
+    if (!navigator.onLine) {
+      await queueWrite('saveMentorConferenceRatings', ratingsPayload);
+      setSaving(prev => ({ ...prev, [type]: false }));
+      setSaveAttempted(prev => ({ ...prev, [type]: false }));
+      toast({ title: 'Saved offline', description: 'Will sync when reconnected.' });
+      return;
+    }
+    await saveMentorConferenceRatings(ratingsPayload);
     setSaving(prev => ({ ...prev, [type]: false }));
     setSaveAttempted(prev => ({ ...prev, [type]: false }));
     toast({ title: 'Saved', description: `${type === 'entrance' ? 'Entrance' : 'Exit'} conference ratings saved.` });
