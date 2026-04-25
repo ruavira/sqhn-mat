@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AppHeader from '@/components/shared/AppHeader';
-import BottomNav from '@/components/shared/BottomNav';
+import BottomNav from '@/components/shared/BottomNav.jsx';
 import { getTrainingPlan } from '@/functions/getTrainingPlan';
 import { getRemedialPlan } from '@/functions/getRemedialPlan';
 import { updateTraineeProgress } from '@/functions/updateTraineeProgress';

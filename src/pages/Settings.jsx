@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AppHeader from '@/components/shared/AppHeader';
-import BottomNav from '@/components/shared/BottomNav';
+import BottomNav from '@/components/shared/BottomNav.jsx';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {

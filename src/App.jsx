@@ -53,6 +53,15 @@ function App() {
   useEffect(() => {
     initDb();
     startSyncListener();
+
+    // Apply dark class based on system preference and keep it in sync
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = (e) => {
+      document.documentElement.classList.toggle('dark', e.matches);
+    };
+    apply(mq);
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
   }, []);
 
   return (
