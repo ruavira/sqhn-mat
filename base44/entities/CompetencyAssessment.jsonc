@@ -1,0 +1,76 @@
+{
+  "name": "CompetencyAssessment",
+  "type": "object",
+  "properties": {
+    "mentor_email": {
+      "type": "string",
+      "description": "Email of the mentor"
+    },
+    "trainee_email": {
+      "type": "string",
+      "description": "Email of the trainee"
+    },
+    "assignment_id": {
+      "type": "string",
+      "description": "ID of the MentorTraineeAssignment"
+    },
+    "domain_scores": {
+      "type": "object",
+      "description": "Map of indicator_id to {result, comment}",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "needs_development"
+            ]
+          },
+          "comment": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "overall_outcome": {
+      "type": "string",
+      "enum": [
+        "Recommended for Certification",
+        "Recommended for Mentored Assessment 2"
+      ],
+      "description": "Overall assessment outcome"
+    },
+    "overall_comments": {
+      "type": "string",
+      "description": "Overall comments from mentor"
+    },
+    "feedback_for_trainee": {
+      "type": "string",
+      "description": "Feedback for the trainee"
+    },
+    "mentor_signature": {
+      "type": "string",
+      "description": "Mentor's signature"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the assessment was signed"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted"
+      ],
+      "default": "draft",
+      "description": "Assessment status"
+    }
+  },
+  "required": [
+    "mentor_email",
+    "trainee_email",
+    "assignment_id"
+  ]
+}

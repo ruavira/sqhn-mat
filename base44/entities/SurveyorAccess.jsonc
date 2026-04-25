@@ -1,0 +1,40 @@
+{
+  "name": "SurveyorAccess",
+  "type": "object",
+  "properties": {
+    "surveyor_email": {
+      "type": "string",
+      "description": "Email of the certified surveyor/mentor"
+    },
+    "surveyor_name": {
+      "type": "string",
+      "description": "Full name of the surveyor"
+    },
+    "access_code": {
+      "type": "string",
+      "description": "Access code for authentication"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "revoked"
+      ],
+      "default": "active",
+      "description": "Status of the access code"
+    },
+    "issued_by_email": {
+      "type": "string",
+      "description": "Email of the PM who issued this code"
+    },
+    "last_used_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time this code was used to login"
+    }
+  },
+  "required": [
+    "surveyor_email",
+    "access_code"
+  ]
+}

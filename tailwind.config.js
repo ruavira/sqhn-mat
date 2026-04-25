@@ -2,8 +2,21 @@
 module.exports = {
     darkMode: ["class"],
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
+    safelist: [
+      'bg-teal-100', 'text-teal-700', 'border-teal-200',
+      'bg-amber-100', 'text-amber-700', 'border-amber-200',
+      'bg-red-100', 'text-red-700', 'border-red-200',
+      'bg-slate-100', 'text-slate-500', 'border-slate-200',
+      'bg-green-100', 'text-green-700', 'border-green-200',
+      'bg-blue-100', 'text-blue-700', 'border-blue-200',
+      'bg-green-50', 'bg-red-50', 'bg-amber-50',
+      'ring-green-200', 'ring-amber-200',
+    ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			inter: ['var(--font-inter)']
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',

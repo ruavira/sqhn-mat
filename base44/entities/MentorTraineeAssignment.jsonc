@@ -1,0 +1,75 @@
+{
+  "name": "MentorTraineeAssignment",
+  "type": "object",
+  "properties": {
+    "mentor_email": {
+      "type": "string",
+      "description": "Email of the mentor"
+    },
+    "mentor_name": {
+      "type": "string",
+      "description": "Full name of the mentor"
+    },
+    "trainee_email": {
+      "type": "string",
+      "description": "Email of the trainee"
+    },
+    "trainee_name": {
+      "type": "string",
+      "description": "Full name of the trainee"
+    },
+    "session_number": {
+      "type": "number",
+      "enum": [
+        1,
+        2
+      ],
+      "default": 1,
+      "description": "Assessment session number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "upcoming",
+        "in_progress",
+        "submitted"
+      ],
+      "default": "upcoming",
+      "description": "Assignment status"
+    },
+    "facility_name": {
+      "type": "string",
+      "description": "Name of the facility"
+    },
+    "facility_state": {
+      "type": "string",
+      "description": "State of the facility"
+    },
+    "assessment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of assessment"
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "Recommended for Certification",
+        "Recommended for Mentored Assessment 2"
+      ],
+      "description": "Assessment result"
+    },
+    "result_submitted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the result was submitted"
+    },
+    "cohort": {
+      "type": "string",
+      "description": "Cohort identifier"
+    }
+  },
+  "required": [
+    "mentor_email",
+    "trainee_email"
+  ]
+}

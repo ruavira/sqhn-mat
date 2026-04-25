@@ -1,0 +1,62 @@
+{
+  "name": "StandardsScore",
+  "type": "object",
+  "properties": {
+    "trainee_email": {
+      "type": "string",
+      "description": "Email of the trainee"
+    },
+    "assignment_id": {
+      "type": "string",
+      "description": "ID of the MentorTraineeAssignment"
+    },
+    "chapter_code": {
+      "type": "string",
+      "description": "Chapter code (e.g. GG, QI)"
+    },
+    "chapter_name": {
+      "type": "string",
+      "description": "Chapter name"
+    },
+    "standard_code": {
+      "type": "string",
+      "description": "Standard code"
+    },
+    "standard_name": {
+      "type": "string",
+      "description": "Standard name"
+    },
+    "requirement_code": {
+      "type": "string",
+      "description": "Requirement code (e.g. GG.1.1.1)"
+    },
+    "requirement_text": {
+      "type": "string",
+      "description": "Requirement text"
+    },
+    "score": {
+      "type": "string",
+      "enum": [
+        "Fully Met",
+        "Partially Met",
+        "Not Met",
+        "N/A"
+      ],
+      "description": "Score for this requirement"
+    },
+    "finding": {
+      "type": "string",
+      "description": "Finding/notes for this requirement"
+    },
+    "assessed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this was assessed"
+    }
+  },
+  "required": [
+    "trainee_email",
+    "assignment_id",
+    "requirement_code"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "name": "TraineeAccess",
+  "type": "object",
+  "properties": {
+    "trainee_email": {
+      "type": "string",
+      "description": "Email of the trainee surveyor"
+    },
+    "trainee_name": {
+      "type": "string",
+      "description": "Full name of the trainee"
+    },
+    "access_code": {
+      "type": "string",
+      "description": "Access code for authentication"
+    },
+    "assigned_mentor_email": {
+      "type": "string",
+      "description": "Email of assigned mentor"
+    },
+    "cohort": {
+      "type": "string",
+      "description": "Cohort identifier"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "revoked"
+      ],
+      "default": "active",
+      "description": "Status of the access code"
+    },
+    "issued_by_email": {
+      "type": "string",
+      "description": "Email of the PM who issued this code"
+    },
+    "session_number": {
+      "type": "number",
+      "default": 1,
+      "description": "Assessment session number"
+    }
+  },
+  "required": [
+    "trainee_email",
+    "trainee_name",
+    "access_code"
+  ]
+}

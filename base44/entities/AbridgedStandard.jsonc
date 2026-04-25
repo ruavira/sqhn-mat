@@ -1,0 +1,43 @@
+{
+  "name": "AbridgedStandard",
+  "type": "object",
+  "properties": {
+    "chapter_code": {
+      "type": "string",
+      "description": "Chapter code (e.g. GG, QI)"
+    },
+    "chapter_name": {
+      "type": "string",
+      "description": "Chapter name"
+    },
+    "standard_code": {
+      "type": "string",
+      "description": "Standard code"
+    },
+    "standard_name": {
+      "type": "string",
+      "description": "Standard name"
+    },
+    "requirement_code": {
+      "type": "string",
+      "description": "Requirement code (e.g. GG.1.1.1)"
+    },
+    "requirement_text": {
+      "type": "string",
+      "description": "Full text of the requirement"
+    },
+    "is_critical": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a critical requirement"
+    },
+    "order_index": {
+      "type": "number",
+      "description": "Display order"
+    }
+  },
+  "required": [
+    "chapter_code",
+    "requirement_code"
+  ]
+}

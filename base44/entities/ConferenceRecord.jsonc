@@ -1,0 +1,64 @@
+{
+  "name": "ConferenceRecord",
+  "type": "object",
+  "properties": {
+    "trainee_email": {
+      "type": "string",
+      "description": "Email of the trainee"
+    },
+    "assignment_id": {
+      "type": "string",
+      "description": "ID of the MentorTraineeAssignment"
+    },
+    "conference_type": {
+      "type": "string",
+      "enum": [
+        "entrance",
+        "exit"
+      ],
+      "description": "Type of conference"
+    },
+    "checklist_items": {
+      "type": "array",
+      "description": "Array of checklist items with id, text, and checked status",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          },
+          "checked": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Conference notes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_progress",
+        "completed"
+      ],
+      "default": "not_started",
+      "description": "Conference status"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the conference was completed"
+    }
+  },
+  "required": [
+    "trainee_email",
+    "assignment_id",
+    "conference_type"
+  ]
+}
