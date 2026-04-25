@@ -11,23 +11,23 @@ import { LogIn, LogOut, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ENTRANCE_AGENDA = [
-  'Introduce the survey team to facility leadership',
-  'Confirm the survey schedule with facility management',
-  'Submit the documentation request list',
-  'Explain the survey objectives and process clearly',
-  'Address questions from facility leadership professionally',
-  'Declare any conflict of interest',
-  'Confirm scope of survey (services and conditional chapters)',
+  'Surveyor introductions and roles',
+  'Purpose and scope of the survey',
+  'Resident/patient rights and grievance process',
+  'Survey methodology and schedule',
+  'Medical records access procedures',
+  'Staff availability and interviews',
+  'Questions and facility concerns',
 ];
 
 const EXIT_AGENDA = [
-  'Present preliminary findings to facility leadership',
-  'Communicate all critical findings clearly',
-  'Provide context and explanation for scores given',
-  'Explain recommendations and next steps',
-  'Allow facility to ask questions and respond appropriately',
-  'Discuss CAPA expectations for identified findings',
-  'Maintain professional composure throughout',
+  'Summary of survey findings',
+  'Deficiencies identified and regulatory citations',
+  'Severity and scope determinations',
+  'Plan of correction expectations',
+  'Informal dispute resolution process',
+  'Next steps and timelines',
+  'Questions from facility leadership',
 ];
 
 const RATINGS = [
@@ -39,62 +39,62 @@ const RATINGS = [
 const SUGGESTED_COMMENTS = {
   entrance: [
     {
-      satisfactory: 'Introductions were made clearly and professionally to all facility leadership present.',
-      needs_improvement: 'Introductions were incomplete or lacked clarity; some leadership members were not properly acknowledged.',
+      satisfactory: 'Trainee clearly introduced themselves and articulated their role. Facility staff appeared informed and at ease.',
+      needs_improvement: 'Trainee did not clearly introduce themselves or articulate their surveyor role. Introductions were incomplete or unclear to facility staff.',
     },
     {
-      satisfactory: 'Survey schedule was confirmed with management and all parties understood the plan.',
-      needs_improvement: 'Schedule confirmation was unclear or not fully agreed upon with facility management.',
+      satisfactory: "Trainee effectively communicated the survey's purpose and scope. Facility leadership had a clear understanding of what to expect.",
+      needs_improvement: 'Trainee failed to clearly communicate the purpose and scope of the survey. Facility staff were left uncertain about what was being assessed.',
     },
     {
-      satisfactory: 'Documentation request list was submitted promptly and completely.',
-      needs_improvement: 'Documentation request list was delayed, incomplete, or not clearly communicated.',
+      satisfactory: 'Trainee adequately explained resident rights and the grievance process, covering key protections and how concerns can be raised.',
+      needs_improvement: 'Trainee did not adequately explain resident rights or the grievance process. Key information was omitted or not clearly communicated.',
     },
     {
-      satisfactory: 'Survey objectives and process were explained thoroughly and the facility clearly understood expectations.',
-      needs_improvement: 'Explanation of objectives was unclear or incomplete; facility had remaining questions.',
+      satisfactory: 'Trainee clearly explained the survey methodology and provided a reasonable overview of the expected schedule.',
+      needs_improvement: 'Trainee was unable to clearly explain the survey methodology or expected timeline, causing confusion among facility leadership.',
     },
     {
-      satisfactory: 'Questions from leadership were addressed professionally and with confidence.',
-      needs_improvement: 'Some questions were not answered adequately or the response lacked professionalism.',
+      satisfactory: 'Trainee clearly outlined the process for accessing medical records and established appropriate expectations with facility staff.',
+      needs_improvement: 'Trainee did not clearly outline the process for accessing medical records or establish expectations with facility staff.',
     },
     {
-      satisfactory: 'Conflict of interest was declared appropriately and documented.',
-      needs_improvement: 'Conflict of interest declaration was omitted or not handled according to protocol.',
+      satisfactory: 'Trainee effectively communicated expectations for staff availability and the interview process to facility leadership.',
+      needs_improvement: 'Trainee did not effectively communicate expectations for staff availability and interview scheduling during the survey.',
     },
     {
-      satisfactory: 'Survey scope including services and conditional chapters was clearly confirmed.',
-      needs_improvement: 'Survey scope was not fully clarified, leaving ambiguity about services or conditional chapters.',
+      satisfactory: 'Trainee managed facility questions and concerns professionally, providing clear and complete responses.',
+      needs_improvement: 'Trainee did not effectively manage facility questions or concerns. Responses were incomplete or did not adequately address the issues raised.',
     },
   ],
   exit: [
     {
-      satisfactory: 'Preliminary findings were presented clearly and comprehensively to facility leadership.',
-      needs_improvement: 'Findings presentation was incomplete or difficult for facility leadership to follow.',
+      satisfactory: 'Trainee provided a clear, organized summary of survey findings. Facility staff had a solid understanding of the overall results.',
+      needs_improvement: 'Trainee did not provide a clear or organized summary of findings. Facility staff were left unclear about the overall survey results.',
     },
     {
-      satisfactory: 'All critical findings were communicated clearly with appropriate emphasis.',
-      needs_improvement: 'Critical findings were not communicated clearly or their severity was not adequately conveyed.',
+      satisfactory: 'Trainee accurately presented identified deficiencies and corresponding regulatory citations with sufficient clarity.',
+      needs_improvement: 'Trainee failed to accurately or clearly present the deficiencies and corresponding regulatory citations.',
     },
     {
-      satisfactory: 'Context and rationale for scores were explained clearly and tied to evidence.',
-      needs_improvement: 'Explanations for scores lacked sufficient context or were not well linked to observed evidence.',
+      satisfactory: 'Trainee adequately explained severity and scope determinations and could respond to clarifying questions from facility leadership.',
+      needs_improvement: 'Trainee was unable to adequately explain severity and scope determinations to facility leadership.',
     },
     {
-      satisfactory: 'Recommendations and next steps were explained clearly and the facility knew how to proceed.',
-      needs_improvement: 'Next steps were unclear or recommendations were not sufficiently actionable.',
+      satisfactory: 'Trainee clearly communicated the expectations for the plan of correction, including format and submission timelines.',
+      needs_improvement: 'Trainee did not clearly communicate the expectations for the plan of correction or the required format and timeline.',
     },
     {
-      satisfactory: 'Facility questions were handled professionally and responses were appropriate and thorough.',
-      needs_improvement: 'Questions were not fully addressed or responses were insufficient.',
+      satisfactory: "Trainee adequately explained the informal dispute resolution process and the facility's rights regarding disputed findings.",
+      needs_improvement: "Trainee did not adequately explain the IDR process or the facility's rights regarding disputed findings.",
     },
     {
-      satisfactory: 'CAPA expectations were explained clearly for all identified findings.',
-      needs_improvement: 'CAPA expectations were not fully communicated or lacked specificity for identified findings.',
+      satisfactory: 'Trainee clearly communicated next steps and critical timelines following the survey conclusion.',
+      needs_improvement: 'Trainee failed to clearly communicate next steps and critical timelines following the survey.',
     },
     {
-      satisfactory: 'Professional composure was maintained throughout the exit conference.',
-      needs_improvement: 'Composure was not consistently maintained; tone or responses could have been more professional.',
+      satisfactory: 'Trainee effectively and professionally managed questions from facility leadership, providing complete and accurate responses.',
+      needs_improvement: 'Trainee did not effectively manage questions from facility leadership. Responses were incomplete or unclear.',
     },
   ],
 };
@@ -105,7 +105,6 @@ function ConferenceCard({ record, type, agenda, onRatingChange, onCommentChange,
   const ratings = record?.item_ratings || {};
   const comments = record?.item_comments || {};
   const rated = agenda.filter((_, i) => ratings[i]).length;
-  const suggestions = SUGGESTED_COMMENTS[type] || [];
 
   return (
     <Card className="p-4 space-y-4">
@@ -126,9 +125,7 @@ function ConferenceCard({ record, type, agenda, onRatingChange, onCommentChange,
         {agenda.map((item, idx) => {
           const currentRating = ratings[idx];
           const comment = comments[idx] || '';
-          const itemSuggestions = suggestions[idx] || {};
-          const suggestedText = currentRating ? itemSuggestions[currentRating] : null;
-          const isMissingComment = saveAttempted && !comment.trim();
+          const isMissingComment = saveAttempted && ratings[idx] && !comment.trim();
 
           return (
             <div key={idx} className="space-y-2">
@@ -154,15 +151,6 @@ function ConferenceCard({ record, type, agenda, onRatingChange, onCommentChange,
                 ))}
               </div>
               <div className="pl-7 space-y-1.5">
-                {suggestedText && !comment.trim() && (
-                  <button
-                    onClick={() => onCommentChange(type, idx, suggestedText)}
-                    className="w-full text-left text-xs text-primary/80 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 hover:bg-primary/10 transition-colors leading-relaxed"
-                  >
-                    <span className="font-medium text-primary/60 block mb-0.5 uppercase tracking-wide" style={{fontSize: '10px'}}>Suggested →</span>
-                    {suggestedText}
-                  </button>
-                )}
                 <textarea
                   value={comment}
                   onChange={e => onCommentChange(type, idx, e.target.value)}
@@ -300,7 +288,7 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
     // Require a comment for every rated item
     const missingComment = agenda.some((_, idx) => ratings[idx] && !(comments[idx] || '').trim());
     if (missingComment) {
-      toast({ title: 'Comments required', description: 'Please enter a comment for every agenda item before saving.', variant: 'destructive' });
+      toast({ title: 'Comment required for all rated items', description: 'Please enter a comment for every rated agenda item before saving.', variant: 'destructive' });
       return;
     }
 
