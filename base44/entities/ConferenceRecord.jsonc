@@ -54,6 +54,35 @@
         "type": "string"
       }
     },
+    "mentor_item_assessments": {
+      "type": "array",
+      "description": "Structured array of per-item mentor assessments",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_index": {
+            "type": "number",
+            "description": "Zero-based index of the agenda item"
+          },
+          "item_label": {
+            "type": "string",
+            "description": "Text label of the agenda item"
+          },
+          "rating": {
+            "type": "string",
+            "enum": [
+              "satisfactory",
+              "needs_improvement"
+            ],
+            "description": "Mentor rating for this item"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Free-text mentor comment for this item"
+          }
+        }
+      }
+    },
     "notes": {
       "type": "string",
       "description": "Conference notes"
