@@ -1,0 +1,87 @@
+{
+  "name": "RemedialPlan",
+  "type": "object",
+  "properties": {
+    "assignment_id": {
+      "type": "string",
+      "description": "ID of the MentorTraineeAssignment"
+    },
+    "trainee_email": {
+      "type": "string",
+      "description": "Email of the trainee"
+    },
+    "mentor_email": {
+      "type": "string",
+      "description": "Email of the mentor"
+    },
+    "session_number": {
+      "type": "number",
+      "description": "MA session number this relates to"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Active",
+        "Completed"
+      ],
+      "default": "Draft",
+      "description": "Plan status"
+    },
+    "identified_deficiencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of identified deficiency strings"
+    },
+    "corrective_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "target_date": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Pending",
+              "In Progress",
+              "Completed"
+            ]
+          }
+        }
+      },
+      "description": "List of corrective actions"
+    },
+    "reassessment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Planned reassessment date"
+    },
+    "mentor_notes": {
+      "type": "string",
+      "description": "Additional mentor notes"
+    },
+    "trainee_acknowledged": {
+      "type": "boolean",
+      "default": false
+    },
+    "trainee_acknowledgment_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "status"
+  ]
+}

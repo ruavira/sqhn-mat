@@ -8,11 +8,12 @@ import MentorStandardsTab from '@/components/mentor/MentorStandardsTab.jsx';
 import MentorConferencesTab from '@/components/mentor/MentorConferencesTab.jsx';
 import CompetencyTab from '@/components/mentor/CompetencyTab.jsx';
 import MentorNotesTab from '@/components/mentor/MentorNotesTab.jsx';
+import TrainingPlanTab from '@/components/mentor/TrainingPlanTab.jsx';
 import { Loader2, User, MapPin, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { getSession } from '@/lib/sqhnSession';
 
-const TABS = ['Standards', 'Conferences', 'Competency', 'Session Journal'];
+const TABS = ['Standards', 'Conferences', 'Competency', 'Session Journal', 'Training Plan'];
 
 export default function TraineeProfile() {
   const assignmentId = window.location.pathname.split('/').pop();
@@ -114,6 +115,15 @@ export default function TraineeProfile() {
             traineeEmail={assignment.trainee_email}
             mentorEmail={session?.email || ''}
             sessionNumber={assignment.current_ma_session || assignment.session_number || 1}
+          />
+        )}
+        {activeTab === 4 && (
+          <TrainingPlanTab
+            assignmentId={assignment.id}
+            traineeEmail={assignment.trainee_email}
+            mentorEmail={session?.email || ''}
+            sessionNumber={assignment.current_ma_session || assignment.session_number || 1}
+            assignmentData={assignment}
           />
         )}
       </div>

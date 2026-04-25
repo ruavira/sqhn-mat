@@ -12,6 +12,7 @@ import TraineeProfile from './pages/TraineeProfile.jsx';
 import EntranceConference from './pages/trainee/EntranceConference.jsx';
 import StandardsScoring from './pages/trainee/StandardsScoring.jsx';
 import ExitConference from './pages/trainee/ExitConference.jsx';
+import MyPlan from './pages/trainee/MyPlan.jsx';
 import RequireAuth from './components/shared/RequireAuth';
 
 function App() {
@@ -37,6 +38,9 @@ function App() {
           } />
           <Route path="/exit" element={
             <RequireAuth allowedRole="trainee"><ExitConference /></RequireAuth>
+          } />
+          <Route path="/my-plan" element={
+            <RequireAuth allowedRole="trainee"><MyPlan /></RequireAuth>
           } />
           <Route path="*" element={<PageNotFound />} />
         </Routes>

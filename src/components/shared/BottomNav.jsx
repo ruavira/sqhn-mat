@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getSession } from '@/lib/sqhnSession';
-import { LayoutDashboard, Users, ClipboardCheck, LogIn, LogOut, FileCheck } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, LogIn, LogOut, ClipboardList } from 'lucide-react';
 
 const mentorTabs = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -11,6 +11,7 @@ const traineeTabs = [
   { path: '/entrance', label: 'Entrance', icon: LogIn },
   { path: '/standards', label: 'Standards', icon: ClipboardCheck },
   { path: '/exit', label: 'Exit', icon: LogOut },
+  { path: '/my-plan', label: 'My Plan', icon: ClipboardList },
 ];
 
 export default function BottomNav() {

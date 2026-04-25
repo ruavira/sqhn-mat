@@ -1,0 +1,82 @@
+{
+  "name": "TrainingPlanItem",
+  "type": "object",
+  "properties": {
+    "assignment_id": {
+      "type": "string",
+      "description": "ID of the MentorTraineeAssignment"
+    },
+    "trainee_email": {
+      "type": "string",
+      "description": "Email of the trainee"
+    },
+    "mentor_email": {
+      "type": "string",
+      "description": "Email of the mentor"
+    },
+    "session_number": {
+      "type": "number",
+      "description": "MA session number"
+    },
+    "title": {
+      "type": "string",
+      "description": "Plan item title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description and recommendations"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Standards",
+        "Conference Skills",
+        "Competency",
+        "Custom"
+      ],
+      "description": "Category of the plan item"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "High",
+        "Medium",
+        "Low"
+      ],
+      "default": "Medium",
+      "description": "Priority level"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Pending",
+        "In Progress",
+        "Completed"
+      ],
+      "default": "Pending",
+      "description": "Current status"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Target completion date"
+    },
+    "source_reference": {
+      "type": "string",
+      "description": "Reference code or label that generated this item"
+    },
+    "visible_to_trainee": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this item has been approved/sent to trainee"
+    },
+    "trainee_progress_notes": {
+      "type": "string",
+      "description": "Trainee's own progress notes"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "title"
+  ]
+}

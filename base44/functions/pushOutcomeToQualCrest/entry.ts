@@ -74,6 +74,18 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.MentorTraineeAssignment.update(assignment_id, localUpdate);
 
+    // Auto-generate remedial plan if outcome is "Not Recommended"
+    if (outcome === 'Not Recommended') {
+      const assignments = await base44.asServiceRole.entities.MentorTraineeAssignment.filter({ id: assignment_id });
+      const assignment = assignments?.[0];
+      await base44.asServiceRole.functions.invoke('generateRemedialPlan', {
+        assignment_id,
+        trainee_email,
+        mentor_email: assignment?.mentor_email || '',
+        session_number: session_number || 1,
+      });
+    }
+
     return Response.json({ success: true });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
