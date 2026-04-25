@@ -32,6 +32,16 @@ function Badge({ label, colorClass }) {
   );
 }
 
+const ISSUER_LABEL = 'SQHN Accreditation Unit — Surveyor Training Certification Program';
+
+function IssuerLabel() {
+  return (
+    <p className="text-[10px] text-muted-foreground italic">
+      Issued by: {ISSUER_LABEL}
+    </p>
+  );
+}
+
 function PlanItemCard({ item, onSave }) {
   const [status, setStatus] = useState(item.status || 'Pending');
   const [notes, setNotes] = useState(item.trainee_progress_notes || '');
@@ -82,6 +92,7 @@ function PlanItemCard({ item, onSave }) {
           {saving ? 'Saving…' : 'Save Progress'}
         </Button>
       </div>
+      <IssuerLabel />
     </div>
   );
 }
@@ -97,12 +108,15 @@ function RemedialPlanCard({ plan, onAcknowledge }) {
 
   return (
     <div className="bg-white rounded-xl border border-destructive/30 p-4 space-y-4">
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold text-destructive">Remedial Development Plan</span>
-        <Badge
-          label={plan.status}
-          colorClass={plan.status === 'Active' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}
-        />
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-sm font-semibold text-destructive">Remedial Development Plan</span>
+          <Badge
+            label={plan.status}
+            colorClass={plan.status === 'Active' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground italic">Issued by: {ISSUER_LABEL}</p>
       </div>
 
       {plan.session_number && (
@@ -153,7 +167,7 @@ function RemedialPlanCard({ plan, onAcknowledge }) {
 
       {plan.mentor_notes && (
         <div className="bg-muted/40 rounded-lg px-3 py-2">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Mentor Notes</p>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Programme Notes</p>
           <p className="text-xs">{plan.mentor_notes}</p>
         </div>
       )}
@@ -164,9 +178,9 @@ function RemedialPlanCard({ plan, onAcknowledge }) {
           Acknowledged on {format(new Date(plan.trainee_acknowledgment_date), 'dd MMM yyyy')}
         </div>
       ) : (
-        <Button className="w-full" onClick={handleAck} disabled={acknowledging}>
-          {acknowledging ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
-          I have read and understood this plan
+        <Button className="w-full text-left leading-snug h-auto py-2.5 px-4 whitespace-normal" onClick={handleAck} disabled={acknowledging}>
+          {acknowledging ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 flex-shrink-0" /> : null}
+          I acknowledge receipt of this development plan from the SQHN Accreditation Unit Surveyor Training Certification Program
         </Button>
       )}
     </div>
@@ -231,14 +245,15 @@ export default function MyPlan() {
         <div className="space-y-3">
           <div>
             <h2 className="text-base font-bold text-foreground">Your Development Plan</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-[10px] text-muted-foreground italic mt-0.5">Issued by: {ISSUER_LABEL}</p>
+            <p className="text-xs text-muted-foreground mt-1">
               {items.length} item{items.length !== 1 ? 's' : ''} · {activeItems.length} active · {completedItems.length} completed
             </p>
           </div>
 
           {items.length === 0 ? (
             <div className="bg-white rounded-xl border border-border p-6 text-center">
-              <p className="text-sm text-muted-foreground">Your mentor hasn't sent any plan items yet. Check back after your assessment sessions.</p>
+              <p className="text-sm text-muted-foreground">No plan items have been issued yet. Check back after your assessment sessions.</p>
             </div>
           ) : (
             <>
@@ -267,7 +282,6 @@ export default function MyPlan() {
         {/* Remedial plan */}
         {remedialPlan && (
           <div className="space-y-2">
-            <h3 className="text-sm font-bold text-destructive">Remedial Plan</h3>
             <RemedialPlanCard plan={remedialPlan} onAcknowledge={handleAcknowledge} />
           </div>
         )}

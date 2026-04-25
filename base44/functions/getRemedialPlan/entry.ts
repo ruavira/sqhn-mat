@@ -10,7 +10,10 @@ Deno.serve(async (req) => {
     if (!assignment_id) return Response.json({ error: 'assignment_id required' }, { status: 400 });
 
     const plans = await base44.asServiceRole.entities.RemedialPlan.filter({ assignment_id });
-    return Response.json({ plan: plans?.[0] || null });
+    const raw = plans?.[0] || null;
+    if (!raw) return Response.json({ plan: null });
+    const { mentor_email, ...plan } = raw;
+    return Response.json({ plan });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

@@ -23,7 +23,8 @@ Deno.serve(async (req) => {
       return new Date(a.created_date) - new Date(b.created_date);
     });
 
-    return Response.json({ items: sorted });
+    const sanitized = sorted.map(({ mentor_email, ...rest }) => rest);
+    return Response.json({ items: sanitized });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
