@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getMentorAssignments } from '@/functions/getMentorAssignments';
 import { getSession } from '@/lib/sqhnSession';
 import AppHeader from '@/components/shared/AppHeader';
 import BottomNav from '@/components/shared/BottomNav';
@@ -13,7 +13,10 @@ export default function MentorDashboard() {
 
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ['mentor-assignments', session?.email],
-    queryFn: () => base44.entities.MentorTraineeAssignment.filter({ mentor_email: session.email }),
+    queryFn: async () => {
+      const res = await getMentorAssignments({ mentor_email: session.email });
+      return res.data?.assignments || [];
+    },
     enabled: !!session?.email,
   });
 
