@@ -20,12 +20,17 @@
     },
     "session_number": {
       "type": "number",
-      "enum": [
-        1,
-        2
-      ],
+      "minimum": 1,
+      "maximum": 5,
       "default": 1,
       "description": "Assessment session number"
+    },
+    "current_ma_session": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "default": 1,
+      "description": "Which MA session is currently active for this trainee"
     },
     "status": {
       "type": "string",
@@ -54,7 +59,12 @@
       "type": "string",
       "enum": [
         "Recommended for Certification",
-        "Recommended for Mentored Assessment 2"
+        "Recommended for Mentored Assessment 2",
+        "Recommended for Mentored Assessment 3",
+        "Recommended for Mentored Assessment 4",
+        "Recommended for Mentored Assessment 5",
+        "Recommended for Technical Committee Review",
+        "Not Recommended"
       ],
       "description": "Assessment result"
     },

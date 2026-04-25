@@ -37,7 +37,12 @@
       "type": "string",
       "enum": [
         "Recommended for Certification",
-        "Recommended for Mentored Assessment 2"
+        "Recommended for Mentored Assessment 2",
+        "Recommended for Mentored Assessment 3",
+        "Recommended for Mentored Assessment 4",
+        "Recommended for Mentored Assessment 5",
+        "Recommended for Technical Committee Review",
+        "Not Recommended"
       ],
       "description": "Overall assessment outcome"
     },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { saveCompetencyAssessment } from '@/functions/saveCompetencyAssessment';
+import { pushOutcomeToQualCrest } from '@/functions/pushOutcomeToQualCrest';
 import { getSession } from '@/lib/sqhnSession';
 import { SQHN_DOMAINS, NEEDS_DEVELOPMENT_COMMENTS } from '@/lib/competencyData';
 import { Card } from '@/components/ui/card';
@@ -83,6 +84,17 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
     setDomainScores(prev => ({ ...prev, [indicatorId]: { ...prev[indicatorId], comment } }));
   };
 
+  const currentMaSession = assignmentData?.current_ma_session || 1;
+
+  const progressionOption = (() => {
+    if (currentMaSession === 1) return 'Recommended for Mentored Assessment 2';
+    if (currentMaSession === 2) return 'Recommended for Mentored Assessment 3';
+    if (currentMaSession === 3) return 'Recommended for Mentored Assessment 4';
+    if (currentMaSession === 4) return 'Recommended for Mentored Assessment 5';
+    if (currentMaSession === 5) return 'Recommended for Technical Committee Review';
+    return null;
+  })();
+
   const handleSubmit = async () => {
     if (!overallOutcome || !mentorSignature) {
       toast({ title: 'Missing fields', description: 'Please select an outcome and provide your signature.', variant: 'destructive' });
@@ -104,9 +116,20 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
       update_assignment: true,
     };
     await saveCompetencyAssessment(payload);
+
+    // Push outcome to QualCrest and update assignment
+    await pushOutcomeToQualCrest({
+      trainee_email: traineeEmail,
+      outcome: overallOutcome,
+      session_number: currentMaSession,
+      assessment_date: assignmentData?.assessment_date || new Date().toISOString().split('T')[0],
+      assignment_id: assignmentId,
+    });
+
     setIsSubmitted(true);
     setSaving(false);
     queryClient.invalidateQueries({ queryKey: ['mentor-assignments'] });
+    queryClient.invalidateQueries({ queryKey: ['trainee-profile', assignmentId] });
     toast({ title: 'Assessment submitted', description: 'Competency assessment has been submitted successfully.' });
   };
 
@@ -158,7 +181,10 @@ export default function CompetencyTab({ traineeEmail, assignmentId, assignmentDa
                 <SelectTrigger className="h-12"><SelectValue placeholder="Select outcome" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Recommended for Certification">Recommended for Certification</SelectItem>
-                  <SelectItem value="Recommended for Mentored Assessment 2">Recommended for Mentored Assessment 2</SelectItem>
+                  {progressionOption && (
+                    <SelectItem value={progressionOption}>{progressionOption}</SelectItem>
+                  )}
+                  <SelectItem value="Not Recommended">Not Recommended</SelectItem>
                 </SelectContent>
               </Select>
             </div>

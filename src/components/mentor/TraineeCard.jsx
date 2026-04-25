@@ -25,7 +25,7 @@ export default function TraineeCard({ assignment }) {
               </h3>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xs font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                  Session {assignment.session_number || 1}
+                  MA Session {assignment.current_ma_session || assignment.session_number || 1}
                 </span>
                 <StatusChip status={assignment.status} />
               </div>
