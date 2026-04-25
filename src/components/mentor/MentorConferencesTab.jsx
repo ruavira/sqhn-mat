@@ -297,8 +297,8 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
     const ratings = record?.item_ratings || {};
     const comments = record?.item_comments || {};
 
-    // Require a comment for every item
-    const missingComment = agenda.some((_, idx) => !(comments[idx] || '').trim());
+    // Require a comment for every rated item
+    const missingComment = agenda.some((_, idx) => ratings[idx] && !(comments[idx] || '').trim());
     if (missingComment) {
       toast({ title: 'Comments required', description: 'Please enter a comment for every agenda item before saving.', variant: 'destructive' });
       return;
