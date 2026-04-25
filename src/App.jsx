@@ -18,6 +18,8 @@ function App() {
     <QueryClientProvider client={queryClientInstance}>
       <Router>
         <Routes>
+          {/* '/' and '/login' MUST remain public — never wrap in RequireAuth.
+              See SQHN MAT routing architecture notes in RequireAuth and AppHeader. */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<SignIn />} />
           <Route path="/dashboard" element={

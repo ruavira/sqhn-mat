@@ -9,8 +9,16 @@ export default function AppHeader({ title, showBack, backPath }) {
   const session = getSession();
 
   const handleSignOut = () => {
-    clearSession();
-    navigate('/login');
+    // ⚠️  SQHN MAT SIGN-OUT RULES — DO NOT CHANGE ⚠️
+    // RULE 1: Use localStorage.removeItem('sqhn_mat_session') ONLY — never
+    //         localStorage.clear() or sessionStorage.clear(). Clearing all storage
+    //         removes Base44 SDK keys (base44_app_id, etc.) and causes the platform
+    //         splash screen to appear instead of our custom login form.
+    // RULE 2: Redirect to '/' via window.location.replace, NEVER directly to '/login'.
+    //         The correct chain: '/' → Home → (no session) → Navigate to '/login'.
+    //         Skipping Home by going directly to '/login' causes Base44 SDK to intercept.
+    clearSession(); // removes ONLY 'sqhn_mat_session' — see sqhnSession.js
+    window.location.replace('/');
   };
 
   return (

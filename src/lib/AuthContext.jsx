@@ -114,6 +114,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ============================================================
+  // ⚠️  SQHN MAT SIGN-OUT ARCHITECTURE — DO NOT CHANGE ⚠️
+  // ============================================================
+  // This AuthContext handles Base44 platform auth (SDK-level).
+  // The SQHN MAT custom session ('sqhn_mat_session') is managed
+  // separately via lib/sqhnSession.js using localStorage.removeItem.
+  //
+  // Sign-out rules (enforced in AppHeader.jsx & RequireAuth.jsx):
+  //   RULE 1: Only remove 'sqhn_mat_session' key — NEVER call
+  //           localStorage.clear() or sessionStorage.clear().
+  //           Doing so removes Base44 SDK keys and shows the platform
+  //           splash screen instead of our custom login form.
+  //   RULE 2: Redirect to '/' after sign-out — NEVER directly to '/login'.
+  //           Chain: '/' → Home (no session) → Navigate to '/login'.
+  //   RULE 3: '/login' route in App.jsx must NEVER be wrapped in RequireAuth.
+  //   RULE 4: RequireAuth redirects to '/' (not '/login') when no session.
+  // ============================================================
+
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);

@@ -1,4 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClient } from 'npm:@base44/sdk@0.8.25';
+
+// ============================================================
+// Mentor credentials are verified against the QualCrest Portal
+// (Base44 app ID: 69b3870496f1c2f1c5884db8) — NOT the local
+// SurveyorAccess entity. PMs manage mentor codes in one place
+// (QualCrest Portal) and they automatically work here.
+//
+// ARCHITECTURE: We use the service token injected into this
+// function's environment (QUALCREST_SERVICE_TOKEN secret) to
+// authenticate as service role against the remote app.
+// ============================================================
+
+const QUALCREST_APP_ID = '69b3870496f1c2f1c5884db8';
 
 Deno.serve(async (req) => {
   try {
@@ -9,32 +23,40 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Email and access code are required' }, { status: 400 });
     }
 
-    const records = await base44.asServiceRole.entities.SurveyorAccess.filter({
-      surveyor_email: email.toLowerCase().trim(),
-      access_code: access_code.trim()
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanCode = access_code.trim();
+
+    const serviceToken = Deno.env.get('QUALCREST_SERVICE_TOKEN');
+    if (!serviceToken) {
+      return Response.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    // Create a client for the remote QualCrest Portal using its service token
+    const qualcrestClient = createClient({
+      appId: QUALCREST_APP_ID,
+      serviceToken,
+      serverUrl: '',
+      requiresAuth: false,
+    });
+
+    const records = await qualcrestClient.asServiceRole.entities.SurveyorAccess.filter({
+      surveyor_email: cleanEmail,
+      access_code: cleanCode,
+      status: 'active',
     });
 
     if (!records || records.length === 0) {
-      return Response.json({ error: 'Invalid email or access code' }, { status: 401 });
+      return Response.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const record = records[0];
 
-    if (record.status !== 'active') {
-      return Response.json({ error: 'Access code has been revoked' }, { status: 401 });
-    }
-
-    // Update last used timestamp
-    await base44.asServiceRole.entities.SurveyorAccess.update(record.id, {
-      last_used_at: new Date().toISOString()
-    });
-
     return Response.json({
       success: true,
       name: record.surveyor_name || email,
-      email: record.surveyor_email
+      email: record.surveyor_email,
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message, type: error.constructor?.name }, { status: 500 });
   }
 });
