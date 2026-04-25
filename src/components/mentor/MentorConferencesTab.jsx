@@ -257,11 +257,11 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
       const updated = [...prev];
       const idx = updated.findIndex(r => r.conference_type === type);
 
-      // Auto-populate comment with suggestion when "needs_improvement" is selected and comment is empty
+      // Auto-populate comment with suggestion when a rating is selected and comment is empty
       const autoComment = (rec) => {
         const existingComment = rec?.item_comments?.[itemIndex] || '';
-        if (rating === 'needs_improvement' && !existingComment.trim()) {
-          return SUGGESTED_COMMENTS[type]?.[itemIndex]?.needs_improvement || '';
+        if (!existingComment.trim()) {
+          return SUGGESTED_COMMENTS[type]?.[itemIndex]?.[rating] || '';
         }
         return existingComment;
       };
