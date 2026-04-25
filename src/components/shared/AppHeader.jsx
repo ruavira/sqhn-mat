@@ -46,7 +46,7 @@ export default function AppHeader({ title, showBack, backPath }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-border">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-border" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       {!isOnline && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-center text-[11px] font-medium text-amber-800">
           Offline — changes will sync when reconnected

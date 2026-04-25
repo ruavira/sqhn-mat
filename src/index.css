@@ -78,12 +78,43 @@
   }
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 215 25% 10%;
+    --foreground: 210 40% 96%;
+    --card: 215 25% 13%;
+    --card-foreground: 210 40% 96%;
+    --popover: 215 25% 13%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 213 65% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 20% 18%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 215 20% 18%;
+    --muted-foreground: 215 15% 60%;
+    --accent: 189 94% 37%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 215 20% 20%;
+    --input: 215 20% 20%;
+    --ring: 213 65% 45%;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground font-inter;
+    overscroll-behavior: none;
+  }
+  button, a, [role="button"], input, textarea, select, label {
+    user-select: none;
+  }
+  textarea, input {
+    user-select: text;
   }
 }
 

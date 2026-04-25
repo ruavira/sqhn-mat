@@ -9,12 +9,19 @@ import { Card } from '@/components/ui/card';
 import { Users, Clock, CheckCircle2, Loader2 } from 'lucide-react';
 import { cacheSet, cacheGet } from '@/lib/offlineDb';
 import { format } from 'date-fns';
+import PullToRefresh from '@/components/shared/PullToRefresh';
+import { useQueryClient } from '@tanstack/react-query';
 
 const CACHE_KEY = (email) => `mentor-assignments-${email}`;
 
 export default function MentorDashboard() {
   const session = getSession();
+  const queryClient = useQueryClient();
   const [cachedAt, setCachedAt] = useState(null);
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['mentor-assignments', session?.email] });
+  };
 
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ['mentor-assignments', session?.email],
@@ -43,6 +50,7 @@ export default function MentorDashboard() {
     <div className="min-h-screen bg-background pb-20">
       <AppHeader title="SQHN MAT" />
 
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="max-w-lg mx-auto px-4 py-5 space-y-6">
         {cachedAt && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-xs text-amber-800">
@@ -100,6 +108,7 @@ export default function MentorDashboard() {
           )}
         </div>
       </div>
+      </PullToRefresh>
 
       <BottomNav />
     </div>

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getTraineeProfile } from '@/functions/getTraineeProfile';
 import { cacheSet, cacheGet } from '@/lib/offlineDb';
+import PullToRefresh from '@/components/shared/PullToRefresh';
+import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import AppHeader from '@/components/shared/AppHeader';
 import BottomNav from '@/components/shared/BottomNav';
@@ -23,6 +25,11 @@ export default function TraineeProfile() {
   const [activeTab, setActiveTab] = useState(0);
   const [cachedAt, setCachedAt] = useState(null);
   const session = getSession();
+  const queryClient = useQueryClient();
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['trainee-profile', assignmentId] });
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['trainee-profile', assignmentId],
@@ -55,6 +62,7 @@ export default function TraineeProfile() {
     <div className="min-h-screen bg-background pb-20">
       <AppHeader title="Trainee Profile" showBack backPath="/dashboard" />
 
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
         {cachedAt && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-xs text-amber-800">
@@ -153,6 +161,7 @@ export default function TraineeProfile() {
           />
         )}
       </div>
+      </PullToRefresh>
 
       <BottomNav />
     </div>
