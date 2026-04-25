@@ -256,16 +256,34 @@ export default function MentorConferencesTab({ traineeEmail, assignmentId, initi
     setConferences(prev => {
       const updated = [...prev];
       const idx = updated.findIndex(r => r.conference_type === type);
+
+      // Auto-populate comment with suggestion when "needs_improvement" is selected and comment is empty
+      const autoComment = (rec) => {
+        const existingComment = rec?.item_comments?.[itemIndex] || '';
+        if (rating === 'needs_improvement' && !existingComment.trim()) {
+          return SUGGESTED_COMMENTS[type]?.[itemIndex]?.needs_improvement || '';
+        }
+        return existingComment;
+      };
+
       if (idx === -1) {
-        const next = [...updated, { conference_type: type, item_ratings: { [itemIndex]: rating }, item_comments: {}, status: 'in_progress' }];
+        const newRec = { conference_type: type, item_ratings: { [itemIndex]: rating }, item_comments: {}, status: 'in_progress' };
+        const comment = autoComment(null);
+        if (comment) newRec.item_comments[itemIndex] = comment;
+        const next = [...updated, newRec];
         saveRecord(type, next);
         return next;
       }
       const rec = { ...updated[idx] };
       const currentRating = rec.item_ratings?.[itemIndex];
       rec.item_ratings = { ...(rec.item_ratings || {}) };
-      if (currentRating === rating) delete rec.item_ratings[itemIndex];
-      else rec.item_ratings[itemIndex] = rating;
+      if (currentRating === rating) {
+        delete rec.item_ratings[itemIndex];
+      } else {
+        rec.item_ratings[itemIndex] = rating;
+        const comment = autoComment(rec);
+        if (comment) rec.item_comments = { ...(rec.item_comments || {}), [itemIndex]: comment };
+      }
       updated[idx] = rec;
       saveRecord(type, updated);
       return updated;
