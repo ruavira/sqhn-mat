@@ -9,7 +9,7 @@ import MentorConferencesTab from '@/components/mentor/MentorConferencesTab.jsx';
 import CompetencyTab from '@/components/mentor/CompetencyTab.jsx';
 import MentorNotesTab from '@/components/mentor/MentorNotesTab.jsx';
 import TrainingPlanTab from '@/components/mentor/TrainingPlanTab.jsx';
-import { Loader2, User, MapPin, Calendar } from 'lucide-react';
+import { Loader2, User, MapPin, Calendar, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { getSession } from '@/lib/sqhnSession';
 
@@ -45,19 +45,28 @@ export default function TraineeProfile() {
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">{assignment.trainee_name}</h2>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                  Session {assignment.session_number || 1}
-                </span>
-                <StatusChip status={assignment.status} />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-foreground">{assignment.trainee_name}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                    Session {assignment.session_number || 1}
+                  </span>
+                  <StatusChip status={assignment.status} />
+                </div>
               </div>
             </div>
+            <button
+              onClick={() => window.open(`/report/${assignment.id}?type=admin`, '_blank')}
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/5 transition-colors whitespace-nowrap"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Report
+            </button>
           </div>
           {assignment.facility_name && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground pl-[52px]">

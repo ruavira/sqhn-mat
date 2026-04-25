@@ -8,7 +8,7 @@ import { acknowledgeRemedialPlan } from '@/functions/acknowledgeRemedialPlan';
 import { getSession } from '@/lib/sqhnSession';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, CheckCircle, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 
 const PRIORITY_COLORS = {
@@ -194,6 +194,7 @@ export default function MyPlan() {
 
   const [items, setItems] = useState([]);
   const [remedialPlan, setRemedialPlan] = useState(null);
+  const [competencySubmitted, setCompetencySubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
 
@@ -208,9 +209,15 @@ export default function MyPlan() {
       const plan = remRes.data?.plan;
       if (plan && (plan.status === 'Active' || plan.status === 'Completed')) {
         setRemedialPlan(plan);
+        // If remedial plan exists and is active, competency was submitted
+        setCompetencySubmitted(true);
       }
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => {}).finally(() => setLoading(false));
+
+    // Check competency status via getFullAssessmentData would be heavy;
+    // instead check if assignment has a result set
+    const sess = getSession();
+    if (sess?.result) setCompetencySubmitted(true);
   }, [assignmentId]);
 
   const handleSaveProgress = async (itemId, status, notes) => {
@@ -240,6 +247,17 @@ export default function MyPlan() {
     <div className="min-h-screen bg-background pb-20">
       <AppHeader title="My Plan" />
       <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
+
+        {/* Assessment Report download */}
+        {competencySubmitted && assignmentId && (
+          <button
+            onClick={() => window.open(`/report/${assignmentId}?type=trainee`, '_blank')}
+            className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl py-3 px-4 text-sm font-semibold hover:bg-primary/90 transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            SQHN Assessment Report — Trainee Copy
+          </button>
+        )}
 
         {/* Training plan */}
         <div className="space-y-3">

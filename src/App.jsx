@@ -14,6 +14,7 @@ import StandardsScoring from './pages/trainee/StandardsScoring.jsx';
 import ExitConference from './pages/trainee/ExitConference.jsx';
 import MyPlan from './pages/trainee/MyPlan.jsx';
 import RequireAuth from './components/shared/RequireAuth';
+import AssessmentReport from './pages/AssessmentReport';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
           <Route path="/my-plan" element={
             <RequireAuth allowedRole="trainee"><MyPlan /></RequireAuth>
           } />
+          <Route path="/report/:assignment_id" element={<AssessmentReport />} />
           <Route path="*" element={<PageNotFound />} />
         </Routes>
       </Router>
