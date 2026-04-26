@@ -13,17 +13,31 @@ import MentorConferencesTab from '@/components/mentor/MentorConferencesTab.jsx';
 import CompetencyTab from '@/components/mentor/CompetencyTab.jsx';
 import MentorNotesTab from '@/components/mentor/MentorNotesTab.jsx';
 import TrainingPlanTab from '@/components/mentor/TrainingPlanTab.jsx';
-import { Loader2, User, MapPin, Calendar, FileText } from 'lucide-react';
+import { Loader2, User, MapPin, Calendar, FileText, BookOpen } from 'lucide-react';
 import { getSession } from '@/lib/sqhnSession';
+import { base44 } from '@/api/base44Client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const TABS = ['Standards', 'Conferences', 'Competency', 'Session Journal', 'Training Plan'];
-
 const CACHE_KEY = (id) => `trainee-profile-${id}`;
+
+const MOODLE_OPTIONS = [
+  { value: 'not_started', label: 'Not Started' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+];
+
+const MOODLE_BADGE = {
+  not_started: 'bg-slate-100 text-slate-600 border-slate-200',
+  in_progress: 'bg-blue-100 text-blue-700 border-blue-200',
+  completed: 'bg-green-100 text-green-700 border-green-200',
+};
 
 export default function TraineeProfile() {
   const assignmentId = window.location.pathname.split('/').pop();
   const [activeTab, setActiveTab] = useState(0);
   const [cachedAt, setCachedAt] = useState(null);
+  const [moodleStatus, setMoodleStatus] = useState(null);
   const session = getSession();
   const queryClient = useQueryClient();
 
@@ -43,12 +57,21 @@ export default function TraineeProfile() {
       const d = res.data;
       await cacheSet(CACHE_KEY(assignmentId), { data: d, _cachedAt: Date.now() }, 120);
       setCachedAt(null);
+      setMoodleStatus(d?.assignment?.moodle_completion_status || 'not_started');
       return d;
     },
     enabled: !!assignmentId,
   });
 
   const assignment = data?.assignment;
+
+  // Initialise moodle status once assignment is loaded (handles first render)
+  const effectiveMoodle = moodleStatus ?? (assignment?.moodle_completion_status || 'not_started');
+
+  const handleMoodleChange = async (val) => {
+    setMoodleStatus(val);
+    base44.entities.MentorTraineeAssignment.update(assignmentId, { moodle_completion_status: val }).catch(() => {});
+  };
 
   if (isLoading || !assignment) {
     return (
@@ -57,6 +80,8 @@ export default function TraineeProfile() {
       </div>
     );
   }
+
+  const moodleLabel = MOODLE_OPTIONS.find(o => o.value === effectiveMoodle)?.label || 'Not Started';
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -105,6 +130,25 @@ export default function TraineeProfile() {
               <span>{format(new Date(assignment.assessment_date), 'dd MMM yyyy')}</span>
             </div>
           )}
+
+          {/* Moodle Status row */}
+          <div className="flex items-center gap-2 pl-[52px] pt-1">
+            <BookOpen className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Moodle Status</span>
+            <span className={`text-xs font-medium border rounded px-2 py-0.5 ${MOODLE_BADGE[effectiveMoodle]}`}>
+              {moodleLabel}
+            </span>
+            <Select value={effectiveMoodle} onValueChange={handleMoodleChange}>
+              <SelectTrigger className="h-7 text-xs w-32 ml-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MOODLE_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="flex bg-muted rounded-xl p-1 overflow-x-auto">
