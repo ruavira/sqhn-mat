@@ -1,0 +1,68 @@
+{
+  "name": "AssessmentEvidence",
+  "type": "object",
+  "properties": {
+    "assignment_id": {
+      "type": "string",
+      "description": "Reference to MentorTraineeAssignment"
+    },
+    "session_number": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "uploaded_by": {
+      "type": "string",
+      "format": "email",
+      "description": "Email of user who uploaded"
+    },
+    "uploaded_by_role": {
+      "type": "string",
+      "enum": [
+        "mentor",
+        "trainee"
+      ],
+      "description": "Role of the uploader"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to the uploaded file"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Original filename"
+    },
+    "file_type": {
+      "type": "string",
+      "description": "MIME type"
+    },
+    "file_size_kb": {
+      "type": "number"
+    },
+    "evidence_label": {
+      "type": "string",
+      "description": "Short label describing what this evidence shows"
+    },
+    "standard_reference": {
+      "type": "string",
+      "description": "Chapter/standard code this evidence relates to (e.g. GG.1.1)"
+    },
+    "upload_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "uploaded",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "uploaded_by"
+  ]
+}

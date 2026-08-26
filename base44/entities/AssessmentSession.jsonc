@@ -1,0 +1,57 @@
+{
+  "name": "AssessmentSession",
+  "type": "object",
+  "properties": {
+    "assignment_id": {
+      "type": "string",
+      "description": "ID of the MentorTraineeAssignment this session belongs to"
+    },
+    "session_number": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Which MA session this is (1-5)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the session started"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the session ended"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed"
+      ],
+      "default": "active",
+      "description": "Session status"
+    },
+    "outcome": {
+      "type": "string",
+      "description": "Final outcome recorded when session is completed"
+    },
+    "outcome_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the outcome was recorded"
+    },
+    "trainee_email": {
+      "type": "string",
+      "description": "Email of the trainee for quick lookup"
+    },
+    "mentor_email": {
+      "type": "string",
+      "description": "Email of the mentor for quick lookup"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "session_number",
+    "status"
+  ]
+}

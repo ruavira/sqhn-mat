@@ -76,6 +76,16 @@
     "cohort": {
       "type": "string",
       "description": "Cohort identifier"
+    },
+    "moodle_completion_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_progress",
+        "completed"
+      ],
+      "default": "not_started",
+      "description": "Moodle course completion status for this trainee"
     }
   },
   "required": [

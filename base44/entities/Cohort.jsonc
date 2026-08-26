@@ -1,0 +1,48 @@
+{
+  "name": "Cohort",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Cohort name (e.g. SQHN Cohort 2026-A)"
+    },
+    "programme_manager_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email of the PM managing this cohort"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Cohort start date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Cohort end date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "upcoming",
+        "active",
+        "completed"
+      ],
+      "default": "active"
+    },
+    "description": {
+      "type": "string"
+    },
+    "moodle_course_id": {
+      "type": "string",
+      "description": "Moodle course ID linked to this cohort"
+    },
+    "trainee_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

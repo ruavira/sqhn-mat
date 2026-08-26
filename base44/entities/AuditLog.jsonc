@@ -1,0 +1,41 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "format": "email"
+    },
+    "user_role": {
+      "type": "string",
+      "enum": [
+        "mentor",
+        "trainee",
+        "pm"
+      ]
+    },
+    "action": {
+      "type": "string",
+      "description": "Description of the action (e.g. submitted_assessment, completed_conference)"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Entity affected (e.g. CompetencyAssessment, ConferenceRecord)"
+    },
+    "entity_id": {
+      "type": "string"
+    },
+    "details": {
+      "type": "string",
+      "description": "Additional context about the action"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_email",
+    "action"
+  ]
+}

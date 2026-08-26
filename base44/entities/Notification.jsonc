@@ -1,0 +1,54 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "recipient_email": {
+      "type": "string",
+      "format": "email"
+    },
+    "recipient_role": {
+      "type": "string",
+      "enum": [
+        "mentor",
+        "trainee",
+        "pm"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "notification_type": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "action_required",
+        "success"
+      ],
+      "default": "info"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    },
+    "related_entity_type": {
+      "type": "string",
+      "description": "e.g. MentorTraineeAssignment, CompetencyAssessment"
+    },
+    "related_entity_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "recipient_email",
+    "title",
+    "message"
+  ]
+}

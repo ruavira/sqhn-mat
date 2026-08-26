@@ -1,0 +1,63 @@
+{
+  "name": "MentorNote",
+  "type": "object",
+  "properties": {
+    "assignment_id": {
+      "type": "string",
+      "description": "ID of the MentorTraineeAssignment"
+    },
+    "trainee_email": {
+      "type": "string",
+      "description": "Email of the trainee"
+    },
+    "mentor_email": {
+      "type": "string",
+      "description": "Email of the mentor"
+    },
+    "session_number": {
+      "type": "number",
+      "description": "MA session number this note belongs to"
+    },
+    "content": {
+      "type": "string",
+      "description": "Text content of the note (typed or transcribed from voice)"
+    },
+    "note_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "voice"
+      ],
+      "default": "text",
+      "description": "How the note was created"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Strength",
+          "Growth Area",
+          "Observation"
+        ]
+      },
+      "description": "Optional tags to categorise the note"
+    },
+    "transcription_pending": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when audio was recorded offline and not yet transcribed"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the note was created"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "trainee_email",
+    "mentor_email",
+    "content"
+  ]
+}
